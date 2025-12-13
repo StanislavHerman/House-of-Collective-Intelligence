@@ -4,6 +4,22 @@
   "description": "CLI совет из нескольких LLM с председателем-агентом",
   "type": "module",
   "main": "dist/index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/StanislavHerman/House-of-Collective-Intelligence.git"
+  },
+  "keywords": [
+    "ai",
+    "cli",
+    "llm",
+    "agent",
+    "council",
+    "openai",
+    "anthropic",
+    "terminal"
+  ],
+  "author": "Stanislav Herman",
+  "license": "MIT",
   "bin": {
     "council": "dist/index.js",
     "hause": "dist/index.js"
