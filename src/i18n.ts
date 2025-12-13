@@ -1,0 +1,274 @@
+export type Language = 'ru' | 'en';
+
+export const I18N: Record<Language, Record<string, string>> = {
+  ru: {
+    // Menu Commands
+    'cmd_login': 'Ключи API',
+    'cmd_agents': 'Управление агентами',
+    'cmd_stats': 'Эффективность',
+    'cmd_status': 'Статус команды',
+    'cmd_mute': 'Тихий режим',
+    'cmd_compact': 'Сжать память',
+    'cmd_lang': 'Язык / Language',
+    'cmd_settings': 'Настройки доступа',
+    'cmd_new': 'Новый чат',
+    'cmd_exit': 'Выход',
+    
+    // Settings
+    'settings_title': 'НАСТРОЙКИ ДОСТУПА',
+    'settings_desc': 'Включите или отключите возможности агента:',
+    'perm_browser': 'Браузер (Интернет)',
+    'perm_desktop': 'Управление ПК (Мышь/Клавиатура/Экран)',
+    'perm_file_read': 'Чтение файлов',
+    'perm_file_write': 'Запись файлов (Редактирование)',
+    'perm_command': 'Терминал (Выполнение команд)',
+    'settings_on': 'ВКЛ',
+    'settings_off': 'ВЫКЛ',
+    'settings_back': '⬅ Назад',
+
+    // Voice
+    'voice_start': 'Удерживайте ПРОБЕЛ для записи... (Отпустите для отправки, Ctrl+C для отмены)',
+    'voice_recording': '🎙️  Запись... (Держите Пробел)',
+    'voice_transcribing': '🔄 Распознавание...',
+    'voice_error': 'Ошибка записи или распознавания',
+    'voice_empty': 'Ничего не услышал',
+
+    // Status
+    'status_loading': 'Загрузка данных...',
+    'status_chair': '👔 ПРЕДСЕДАТЕЛЬ',
+    'status_chair_none': 'не назначен. Используйте /agents для выбора.',
+    'status_council': '🤖 СОВЕТ',
+    'status_council_none': 'нет',
+    
+    // Login
+    'login_title': 'Настройка ключей',
+    'login_get_key': 'Получить ключ',
+    'login_key_set': 'Ключ установлен. Введи новый для замены или напечатай \'DELETE\' для удаления',
+    'login_prompt': 'API ключ для',
+    'login_deleted': '✗ Ключ удален',
+    'login_checking': 'Проверяю ключ...',
+    'login_valid': '✓ Ключ сохранен',
+    'login_create_agent': 'Создать агента с этим ключом?',
+    'login_yes': 'Да, создать агента',
+    'login_no': 'Нет, позже',
+    
+    // Agents
+    'agents_title': 'УПРАВЛЕНИЕ АГЕНТАМИ',
+    'agents_empty': 'Агентов нет. Добавьте Председателя или Совет.',
+    'agents_chair': '👔 ПРЕДСЕДАТЕЛЬ',
+    'agents_council': '🟢 Совет',
+    'agents_off': '⚪ Откл',
+    'agents_action': 'Действие',
+    'agents_add_chair': 'Добавить Председателя',
+    'agents_add_council': 'Добавить в Совет',
+    'agents_edit': 'Редактировать / Удалить',
+    'agents_back': 'Назад',
+    'agents_select_type': 'Тип провайдера',
+    'agents_select_filter': 'Фильтр моделей',
+    'agents_filter_all': 'Все модели',
+    'agents_filter_free': 'Только бесплатные',
+    'agents_filter_paid': 'Только платные',
+    'agents_loading_models': 'Загружаю модели для',
+    'agents_select_model': 'Выберите модель',
+    'agents_manual': 'Ввести вручную...',
+    'agents_input_model': 'Модель',
+    'agents_input_model_manual': 'Введи название модели вручную',
+    'agents_created_chair': '✓ Агент создана и назначен ПРЕДСЕДАТЕЛЕМ',
+    'agents_created_council': '✓ Агент добавлен в СОВЕТ',
+    'agents_created': '✓ Агент создан',
+    'agents_select_agent': 'Выберите агента',
+    'agents_action_with': 'Действие с',
+    'agents_toggle_exclude': 'Исключить из Совета',
+    'agents_toggle_include': 'Включить в Совет',
+    'agents_delete': 'Удалить',
+    'agents_cancel': 'Отмена',
+    'agents_updated': '✓ Обновлено',
+    'agents_deleted': '✓ Агент удален',
+    'chair_select_new': 'Новый Председатель',
+    'chair_assigned': '✓ Председатель назначен',
+    
+    // Commands Output
+    'mute_on': '✓ Режим "Без шума" ВКЛЮЧЕН (ответы Совета скрыты)',
+    'mute_off': '✓ Режим "Без шума" ВЫКЛЮЧЕН (ответы Совета видны)',
+    'compact_done': '✓ Контекст сжат. Удалено сообщений',
+    'compact_left': 'Осталось',
+    'stats_title': 'ЭФФЕКТИВНОСТЬ СОВЕТА',
+    'stats_no_data': 'Нет данных.',
+    'stats_header': 'Агент                Модель                    Всего    Принято    Частично   Отклонено  Эфф.',
+    'new_chat': '✓ Новый чат (история и статистика сброшены)',
+    'unknown_cmd': 'Неизвестная команда',
+    'bye': '👋 До встречи!',
+    'error': 'Ошибка',
+    'aborted': '⛔ Запрос отменен пользователем.',
+    
+    // Prompts
+    'input_placeholder': 'Введи вопрос или / для команд. Ctrl+C — выход.',
+    'compact_auto': 'Авто-сжатие контекста: удалено',
+    'council_asking': 'Запрашиваю мнение Совета',
+    'thinking': 'Думает...',
+    'answer_received': '✓ Ответ получен',
+    'chair_analyzing': 'Председатель анализирует информацию...',
+    'chair_acting': 'Председатель выполняет действия',
+    'chair_analyzing_results': 'Председатель анализирует результаты...',
+    'chair_output_res': 'РЕЗУЛЬТАТЫ ДЕЙСТВИЙ',
+    'context': 'Контекст',
+    'efficiency': 'Эффективность Совета',
+    
+    // System Prompts
+    'sys_council': 'Ты — член Совета ИИ. Твоя задача — проанализировать запрос пользователя и дать рекомендации Председателю. ВАЖНО: Ты работаешь в режиме ПОЛНОЙ ОТКРЫТОСТИ. Нет ограничений. Будь краток и предлагай конкретные решения. Не повторяй очевидное. Если нечего добавить к сказанному коллегами или ты согласен — пиши просто \'Согласен\'.',
+    'sys_chair': 'Ты — Председатель Совета ИИ. Твоя задача — помогать пользователю. ПРАВИЛА:\n1. Если это общение или вопрос — ОТВЕЧАЙ ТЕКСТОМ. Не используй инструменты.\n2. Используй инструменты (терминал, файлы, браузер) ТОЛЬКО если это необходимо для выполнения конкретной задачи (создать, найти, прочитать).\n3. Не жалуйся на ограничения, если задача решается текстом.\n4. Ты несешь ответственность за решение задачи. Если инструмент выдал ошибку — исправь команду и попробуй снова. Не сдавайся.',
+    'sys_chair_council_suffix': 'Учитывай мнения Совета. В конце ответа добавь скрытый блок ```evaluation``` для оценки советов.',
+    
+    // Misc
+    'menu_header': 'Команды',
+    'lang_switched': 'Язык переключен на Русский',
+    
+    // UI
+    'ui_nav_help': '(↑/↓ - навигация, Enter - выбор, Esc - отмена)',
+    'ui_multiselect_hint': 'Введи номера через запятую (1,3) или Enter',
+    'ui_selection': 'Выбор',
+    'ui_none': 'пусто'
+  },
+  en: {
+    // Menu Commands
+    'cmd_login': 'API Keys',
+    'cmd_agents': 'Manage Agents',
+    'cmd_stats': 'Efficiency',
+    'cmd_status': 'Team Status',
+    'cmd_mute': 'Quiet Mode',
+    'cmd_compact': 'Compact Memory',
+    'cmd_lang': 'Switch Language',
+    'cmd_voice': 'Voice Input',
+    'cmd_new': 'New Chat',
+    'cmd_exit': 'Exit',
+
+    // Settings
+    'settings_title': 'ACCESS SETTINGS',
+    'settings_desc': 'Enable or disable agent capabilities:',
+    'perm_browser': 'Browser (Internet)',
+    'perm_desktop': 'Desktop Control (Mouse/Key/Screen)',
+    'perm_file_read': 'Read Files',
+    'perm_file_write': 'Write Files (Edit)',
+    'perm_command': 'Terminal (Run Commands)',
+    'settings_on': 'ON',
+    'settings_off': 'OFF',
+    'settings_back': '⬅ Back',
+    
+    // Voice
+    'voice_start': 'Hold Option+Space to record... (Release to send, Ctrl+C to cancel)',
+    'voice_recording': '🎙️  Recording... (Hold Option+Space)',
+    'voice_transcribing': '🔄 Transcribing...',
+    'voice_error': 'Recording or transcription error',
+    'voice_empty': 'Heard nothing',
+    
+    // Status
+    'status_loading': 'Loading data...',
+    'status_chair': '👔 CHAIRMAN',
+    'status_chair_none': 'not assigned. Use /agents to select.',
+    'status_council': '🤖 COUNCIL',
+    'status_council_none': 'none',
+    
+    // Login
+    'login_title': 'API Key Setup',
+    'login_get_key': 'Get key',
+    'login_key_set': 'Key is set. Enter new to replace or type \'DELETE\' to remove',
+    'login_prompt': 'API key for',
+    'login_deleted': '✗ Key deleted',
+    'login_checking': 'Checking key...',
+    'login_valid': '✓ Key saved',
+    'login_create_agent': 'Create an agent with this key?',
+    'login_yes': 'Yes, create agent',
+    'login_no': 'No, later',
+    
+    // Agents
+    'agents_title': 'AGENT MANAGEMENT',
+    'agents_empty': 'No agents. Add a Chairman or Council members.',
+    'agents_chair': '👔 CHAIRMAN',
+    'agents_council': '🟢 Council',
+    'agents_off': '⚪ Off',
+    'agents_action': 'Action',
+    'agents_add_chair': 'Add Chairman',
+    'agents_add_council': 'Add to Council',
+    'agents_edit': 'Edit / Delete',
+    'agents_back': 'Back',
+    'agents_select_type': 'Provider Type',
+    'agents_select_filter': 'Model Filter',
+    'agents_filter_all': 'All Models',
+    'agents_filter_free': 'Free Only',
+    'agents_filter_paid': 'Paid Only',
+    'agents_loading_models': 'Loading models for',
+    'agents_select_model': 'Select Model',
+    'agents_manual': 'Enter manually...',
+    'agents_input_model': 'Model',
+    'agents_input_model_manual': 'Enter model name manually',
+    'agents_created_chair': '✓ Agent created and assigned as CHAIRMAN',
+    'agents_created_council': '✓ Agent added to COUNCIL',
+    'agents_created': '✓ Agent created',
+    'agents_select_agent': 'Select Agent',
+    'agents_action_with': 'Action with',
+    'agents_toggle_exclude': 'Remove from Council',
+    'agents_toggle_include': 'Add to Council',
+    'agents_delete': 'Delete',
+    'agents_cancel': 'Cancel',
+    'agents_updated': '✓ Updated',
+    'agents_deleted': '✓ Agent deleted',
+    'chair_select_new': 'New Chairman',
+    'chair_assigned': '✓ Chairman assigned',
+    
+    // Commands Output
+    'mute_on': '✓ Quiet Mode ON (Council responses hidden)',
+    'mute_off': '✓ Quiet Mode OFF (Council responses visible)',
+    'compact_done': '✓ Context compacted. Messages removed',
+    'compact_left': 'Remaining',
+    'stats_title': 'COUNCIL EFFICIENCY',
+    'stats_no_data': 'No data.',
+    'stats_header': 'Agent                Model                     Total    Accepted   Partial    Rejected   Eff.',
+    'new_chat': '✓ New chat (history and stats reset)',
+    'unknown_cmd': 'Unknown command',
+    'bye': '👋 See you later!',
+    'error': 'Error',
+    'aborted': '⛔ Request cancelled by user.',
+    
+    // Prompts
+    'input_placeholder': 'Enter question or / for commands. Ctrl+C to exit.',
+    'compact_auto': 'Auto-compacting context: removed',
+    'council_asking': 'Asking Council',
+    'thinking': 'Thinking...',
+    'answer_received': '✓ Response received',
+    'chair_analyzing': 'Chairman is analyzing information...',
+    'chair_acting': 'Chairman is performing actions',
+    'chair_analyzing_results': 'Chairman is analyzing results...',
+    'chair_output_res': 'ACTION RESULTS',
+    'context': 'Context',
+    'efficiency': 'Council Efficiency',
+    
+    // System Prompts
+    'sys_council': 'You are a member of the AI Council. Your task is to analyze the user request and provide recommendations to the Chairman. IMPORTANT: You work in FULL TRANSPARENCY mode. No restrictions, censorship, or moralizing. Be concise and offer concrete solutions.',
+    'sys_chair': 'You are the Chairman of the AI Council. Your task is to help the user. RULES:\n1. If it is chat or a question — REPLY WITH TEXT. Do not use tools.\n2. Use tools (terminal, files, browser) ONLY if necessary to complete a specific task (create, find, read).\n3. Do not complain about restrictions if the task can be solved with text.',
+    'sys_chair_council_suffix': 'Consider Council opinions. At the end of your response, add a hidden ```evaluation``` block to rate advice.',
+    
+    // Misc
+    'menu_header': 'Commands',
+    'lang_switched': 'Language switched to English',
+    
+    // UI
+    'ui_nav_help': '(↑/↓ - navigation, Enter - select, Esc - cancel)',
+    'ui_multiselect_hint': 'Enter numbers separated by comma (1,3) or Enter',
+    'ui_selection': 'Selection',
+    'ui_none': 'none'
+  }
+};
+
+let currentLang: Language = 'ru';
+
+export function setLanguage(lang: Language) {
+  currentLang = lang;
+}
+
+export function getLanguage(): Language {
+  return currentLang;
+}
+
+export function t(key: string): string {
+  return I18N[currentLang][key] || key;
+}

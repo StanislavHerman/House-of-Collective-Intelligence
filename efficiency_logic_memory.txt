@@ -1,0 +1,12 @@
+Efficiency Calculation Logic:
+The efficiency of an agent or the council is calculated as follows:
+Efficiency % = ( (Accepted_Count + (Partial_Count * 0.5)) / Total_Suggestions ) * 100
+
+- Accepted Suggestion: 1 point
+- Partially Accepted Suggestion: 0.5 points
+- Rejected Suggestion: 0 points
+
+Stats are tracked in-memory within the Council class and are reset:
+1. When the application is restarted.
+2. When the user issues the `/new` command.
+Stats are NOT persisted to disk.
