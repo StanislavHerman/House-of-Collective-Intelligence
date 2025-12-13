@@ -16,6 +16,15 @@
 - **Privacy**: All keys and history are stored locally on your machine (`~/.council-ai/`).
 - **Auto-Update**: Keep your app up-to-date with a single command.
 
+#### 🤖 Agentic Capabilities
+The Council is not just for chat. Agents can perform real actions on your computer (if you allow them):
+- 🖥️ **Desktop Control**: Take screenshots and simulate keyboard input (macOS).
+- 🌐 **Web Browsing**: Search the web, open pages, and interact with websites.
+- 📁 **File System**: Read and write files in your current directory.
+- 💻 **Terminal**: Execute shell commands.
+
+*You can enable/disable these permissions anytime using the `/settings` command.*
+
 #### 🚀 Installation
 1. Clone the repository.
 2. Run the installation script:
@@ -30,6 +39,7 @@
 #### 📋 Commands Menu (`/`)
 - **/login**: Setup API keys for different providers.
 - **/agents**: Create, delete, and manage AI agents (assign Chairman/Council).
+- **/settings**: Manage permissions for agent tools (browser, desktop control, file access, commands).
 - **/status**: Check current team composition and balance.
 - **/stats**: View efficiency statistics of your Council.
 - **/update**: Check and install updates.
@@ -51,6 +61,15 @@
 - **Приватность**: Все ключи и история хранятся локально на вашем компьютере (`~/.council-ai/`).
 - **Авто-обновление**: Обновление приложения одной командой.
 
+#### 🤖 Агентские возможности
+Совет — это не просто чат. Агенты могут выполнять реальные действия на вашем компьютере (если вы разрешите):
+- 🖥️ **Управление ПК**: Скриншоты экрана и имитация клавиатуры (macOS).
+- 🌐 **Веб-браузинг**: Поиск в интернете, чтение сайтов и взаимодействие с ними.
+- 📁 **Файловая система**: Чтение и создание файлов в текущей папке.
+- 💻 **Терминал**: Выполнение системных команд.
+
+*Вы можете управлять этими разрешениями в любой момент через команду `/settings`.*
+
 #### 🚀 Установка
 1. Скачайте репозиторий.
 2. Запустите скрипт установки:
@@ -65,6 +84,7 @@
 #### 📋 Меню команд (`/`)
 - **/login**: Настройка API ключей.
 - **/agents**: Управление агентами (создание, удаление, назначение в Совет).
+- **/settings**: Настройки доступа агентов к инструментам (браузер, управление ПК, файлы, команды).
 - **/status**: Статус команды и баланс.
 - **/stats**: Статистика эффективности Совета.
 - **/update**: Проверка и установка обновлений.
