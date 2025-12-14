@@ -526,7 +526,7 @@ async function cmdStats(ctx: CommandContext) {
     const table = new Table({
         head: [
             chalk.white(t('stats_col_agent')),
-            chalk.white(t('stats_col_model')),
+            chalk.white(t('stats_col_role')),
             chalk.white(t('stats_col_total')),
             chalk.green(t('stats_col_accepted')),
             chalk.yellow(t('stats_col_partial')),
@@ -537,10 +537,13 @@ async function cmdStats(ctx: CommandContext) {
             'top': '' , 'top-mid': '' , 'top-left': '' , 'top-right': '',
             'bottom': '' , 'bottom-mid': '' , 'bottom-left': '' , 'bottom-right': '',
             'left': '' , 'left-mid': '' , 'mid': '' , 'mid-mid': '',
-            'right': '' , 'right-mid': '' , 'middle': '  ' 
+            'right': '' , 'right-mid': '' , 'middle': ' ' 
         },
-        style: { 'padding-left': 2, 'padding-right': 0, compact: true }
+        style: { 'padding-left': 0, 'padding-right': 1, compact: true }
     });
+
+    const chairId = ctx.config.getChairId();
+    const secretaryId = ctx.config.getSecretaryId();
 
     agents.forEach(a => {
         const stats = ctx.council.getStats(a.id);
@@ -560,14 +563,16 @@ async function cmdStats(ctx: CommandContext) {
             else effColor = chalk.red;
         }
 
-        const modelStr = `${a.providerType}/${a.model}`;
-        
-        // Truncate model string if too long to prevent wrapping
-        const displayModel = modelStr.length > 35 ? modelStr.substring(0, 32) + '...' : modelStr;
+        let roleStr = t('agents_council'); // Default: Council
+        if (a.id === chairId) roleStr = t('agents_chair');
+        if (a.id === secretaryId) roleStr = t('agents_secretary');
+
+        // Strip icons for cleaner table if needed, or keep them
+        // agents_chair usually has icon. Let's keep it but maybe shorten.
 
         table.push([
             a.name,
-            chalk.gray(displayModel),
+            roleStr,
             total.toString(),
             chalk.green(stats.acceptedSuggestions.toString()),
             chalk.yellow(stats.partiallyAcceptedSuggestions.toString()),

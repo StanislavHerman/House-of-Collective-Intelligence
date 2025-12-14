@@ -261,7 +261,7 @@ export const I18N: Record<Language, Record<string, string>> = {
     'stats_title': 'COUNCIL EFFICIENCY',
     'stats_no_data': 'No data.',
     'stats_col_agent': 'Agent',
-    'stats_col_model': 'Model',
+    'stats_col_role': 'Role',
     'stats_col_total': 'Total',
     'stats_col_accepted': 'Accepted',
     'stats_col_partial': 'Partial',

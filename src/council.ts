@@ -514,6 +514,7 @@ export class Council {
       if (onProgress) onProgress(`📝 ${t('status_secretary')} analyzing efficiency...`);
 
       const apiKey = this.config.getApiKey(secretary.providerType);
+      const chairId = this.config.getChairId();
       
       let prompt = `User Question: "${question}"\n\n`;
       prompt += `--- COUNCIL ADVICE ---\n`;
@@ -523,8 +524,10 @@ export class Council {
           prompt += `[ID: ${r.providerId}] ${name}: ${r.text.substring(0, 1000)}\n\n`;
       });
       prompt += `----------------------\n\n`;
-      prompt += `--- CHAIRMAN DECISION ---\n${chairAnswer.substring(0, 3000)}\n-------------------------\n`;
-      prompt += `\nEvaluate usage of advice. Return strictly JSON.`;
+      prompt += `--- CHAIRMAN (ID: ${chairId}) DECISION ---\n${chairAnswer.substring(0, 3000)}\n-------------------------\n`;
+      prompt += `\nEvaluate usage of advice. Return strictly JSON.\n`;
+      prompt += `IMPORTANT: Also evaluate the Chairman (ID: ${chairId})! If the final decision answers the user's question well, mark Chairman as "accepted". If it refuses or fails, "rejected".\n`;
+      prompt += `You can also evaluate yourself (ID: ${secretaryId}) as "accepted" if this analysis process is working smoothly.`;
 
       try {
           const res = await sendToProvider(secretary, apiKey || '', prompt, [], t('sys_secretary'));
