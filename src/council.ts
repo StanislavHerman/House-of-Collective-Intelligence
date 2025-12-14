@@ -461,6 +461,12 @@ export class Council {
                 }
                 
                 toolOutputMsg += `Read File: ${tool.content}\nContent:\n${res.output}\nError: ${res.error || ''}\n\n`;
+            } else if (tool.type === 'tree') {
+                const res = await this.tools.treeView(tool.content || '.');
+                toolOutputMsg += `Tree View: ${tool.content}\nOutput:\n${res.output}\nError: ${res.error || ''}\n\n`;
+            } else if (tool.type === 'search') {
+                const res = await this.tools.searchSmart(tool.content);
+                toolOutputMsg += `Smart Search: ${tool.content}\nOutput:\n${res.output}\nError: ${res.error || ''}\n\n`;
             } else if (tool.type === 'browser_open') {
                 const res = await this.tools.browserOpen(tool.content);
                 toolOutputMsg += `Browser Open: ${tool.content}\nContent: ${res.output.substring(0, 2000)}...\nError: ${res.error || ''}\n\n`;
@@ -619,7 +625,7 @@ export class Council {
       }
   }
 
-  private parseTools(text: string): { type: 'command' | 'file' | 'edit' | 'read' | 'browser_open' | 'browser_search' | 'browser_act' | 'desktop_screenshot' | 'desktop_act', content: string, arg: string }[] {
+  private parseTools(text: string): { type: 'command' | 'file' | 'edit' | 'read' | 'tree' | 'search' | 'browser_open' | 'browser_search' | 'browser_act' | 'desktop_screenshot' | 'desktop_act', content: string, arg: string }[] {
     const results: any[] = [];
     
     // Regex для bash
@@ -629,12 +635,22 @@ export class Council {
       results.push({ type: 'command', content: match[1].trim(), arg: '' });
     }
     
-    // Regex для edit:path (SEARCH/REPLACE block)
-    // Matches: ```edit:path \n <<<<<<< SEARCH \n ... \n ======= \n ... \n >>>>>>> \n ```
-    // We use a looser regex to capture the block and then validate structure later
+    // Regex для edit:path
     const editRegex = /```edit:\s*(.*?)\s*([\s\S]*?)\s*```/g;
     while ((match = editRegex.exec(text)) !== null) {
         results.push({ type: 'edit', arg: match[1].trim(), content: match[2].trim() });
+    }
+
+    // Regex для tree:path
+    const treeRegex = /```tree:\s*(.*?)\s*```/g;
+    while ((match = treeRegex.exec(text)) !== null) {
+        results.push({ type: 'tree', content: match[1].trim(), arg: '' });
+    }
+
+    // Regex для search:query
+    const searchRegex = /```search:\s*(.*?)\s*```/g;
+    while ((match = searchRegex.exec(text)) !== null) {
+        results.push({ type: 'search', content: match[1].trim(), arg: '' });
     }
 
     // Regex для file:path

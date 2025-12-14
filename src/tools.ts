@@ -49,17 +49,27 @@ export const TOOLS_DEF = `
      ИЛИ
      \`\`\`read:<путь/к/файлу>:<строка_нач>-<строка_кон>\`\`\`
 
-5. browser_open
+5. tree_view (РЕКОМЕНДУЕТСЯ)
+   - Описание: Показать дерево файлов проекта (без мусора вроде node_modules). Помогает понять структуру.
+   - Формат вызова:
+     \`\`\`tree:<путь/к/папке> (обычно .)\`\`\`
+
+6. search_smart (РЕКОМЕНДУЕТСЯ)
+   - Описание: Умный поиск текста по файлам (grep). Показывает контекст и игнорирует бинарники.
+   - Формат вызова:
+     \`\`\`search:<запрос>\`\`\`
+
+7. browser_open
    - Описание: Открыть сайт в браузере и получить его текстовое содержимое.
    - Формат вызова:
      \`\`\`browser:open <url>\`\`\`
 
-5. browser_search
+8. browser_search
    - Описание: Поиск в Google/DuckDuckGo.
    - Формат вызова:
      \`\`\`browser:search <запрос>\`\`\`
 
-6. browser_act
+9. browser_act
    - Описание: Выполнить действие на текущей странице (type, click, screenshot).
    - Формат вызова:
      \`\`\`browser:act
@@ -70,12 +80,12 @@ export const TOOLS_DEF = `
      screenshot <path>
      \`\`\`
 
-7. desktop_screenshot
+10. desktop_screenshot
    - Описание: Сделать скриншот всего экрана монитора (macOS).
    - Формат вызова:
      \`\`\`desktop:screenshot <путь/к/файлу.png>\`\`\`
 
-8. desktop_act
+11. desktop_act
    - Описание: Управление клавиатурой (macOS). Полезно для ввода текста в открытые окна (например, Xcode).
    - Формат вызова:
      \`\`\`desktop:act type <текст>\`\`\`
@@ -228,6 +238,61 @@ export class ToolManager {
     } catch (error: any) {
       return { output: '', error: error.message };
     }
+  }
+
+  async treeView(dirPath: string = '.', depth: number = 2): Promise<ToolResult> {
+      try {
+          const root = this.resolvePath(dirPath);
+          let output = '';
+          
+          const walk = async (currentPath: string, currentDepth: number, prefix: string) => {
+              if (currentDepth > depth) return;
+              
+              const entries = await fs.readdir(currentPath, { withFileTypes: true });
+              // Filter out node_modules, .git, etc.
+              const filtered = entries.filter(e => !['node_modules', '.git', '.DS_Store', 'dist', 'build', 'coverage'].includes(e.name));
+              
+              for (let i = 0; i < filtered.length; i++) {
+                  const entry = filtered[i];
+                  const isLast = i === filtered.length - 1;
+                  const marker = isLast ? '└── ' : '├── ';
+                  const subPrefix = isLast ? '    ' : '│   ';
+                  
+                  output += `${prefix}${marker}${entry.name}${entry.isDirectory() ? '/' : ''}\n`;
+                  
+                  if (entry.isDirectory()) {
+                      await walk(path.join(currentPath, entry.name), currentDepth + 1, prefix + subPrefix);
+                  }
+              }
+          };
+          
+          output += `${path.basename(root)}/\n`;
+          await walk(root, 1, '');
+          
+          return { output: output || '(empty directory)' };
+      } catch (e: any) {
+          return { output: '', error: `Tree failed: ${e.message}` };
+      }
+  }
+
+  async searchSmart(query: string, dirPath: string = '.'): Promise<ToolResult> {
+      try {
+          // Use git grep if available (fastest), fallback to find+grep
+          // We'll use a recursive grep via runCommand logic but simplified
+          // grep -rIn "query" --exclude-dir={node_modules,.git,dist} .
+          
+          // Construct explicit exclude arguments for standard grep
+          const excludes = `--exclude-dir=node_modules --exclude-dir=.git --exclude-dir=dist --exclude-dir=build --exclude-dir=coverage`;
+          const cmd = `grep -rIn "${query.replace(/"/g, '\\"')}" ${excludes} "${dirPath}" | head -n 100`; // Limit to 100 matches
+          
+          const res = await this.runCommand(cmd);
+          if (res.error && res.error.includes('exit code 1')) {
+              return { output: 'No matches found.' };
+          }
+          return res;
+      } catch (e: any) {
+          return { output: '', error: `Search failed: ${e.message}` };
+      }
   }
 
   async browserOpen(url: string): Promise<ToolResult> {
