@@ -103,12 +103,16 @@ export class Council {
     const enabledAgents = allAgents.filter(a => a.enabled);
     const currentChairAgentId = this.config.getChairId();
     const currentSecretaryId = this.config.getSecretaryId();
+    const isCouncilActive = this.config.getCouncilActive();
 
     let chairAgent: AgentConfig | undefined = enabledAgents.find((a: AgentConfig) => a.id === currentChairAgentId);
     if (!chairAgent && enabledAgents.length > 0) chairAgent = enabledAgents[0];
 
     // Secretary should NOT be part of the active council voting
-    const councilMembers = enabledAgents.filter((a: AgentConfig) => a.id !== chairAgent!.id && a.id !== currentSecretaryId);
+    // AND if Council is disabled globally, nobody should be voting
+    const councilMembers = isCouncilActive 
+        ? enabledAgents.filter((a: AgentConfig) => a.id !== chairAgent!.id && a.id !== currentSecretaryId)
+        : [];
 
     let chairSystemPromptText = t('sys_chair');
     if (councilMembers.length > 0) {
@@ -496,7 +500,6 @@ export class Council {
     if (!finalChairResponse) throw new Error("No response from chair");
 
     // Запуск Секретаря для оценки эффективности (если есть Секретарь, был Совет и режим Совета активен)
-    const isCouncilActive = this.config.getCouncilActive();
     if (isCouncilActive && currentSecretaryId && councilResponses.length > 0) {
         await this.evaluateEfficiency(currentSecretaryId, question, councilResponses, finalChairResponse.text, onProgress);
     }
