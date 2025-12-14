@@ -14,6 +14,11 @@ export const I18N: Record<Language, Record<string, string>> = {
     'cmd_settings': 'Настройки доступа',
     'cmd_new': 'Новый чат',
     'cmd_exit': 'Выход',
+    'cmd_paste': 'Безопасная вставка (редактор)',
+    'paste_editor_opening': 'Открываю редактор для ввода',
+    'paste_editor_hint': 'Вставьте текст, сохраните и закройте редактор (Ctrl+X -> Y -> Enter для nano)',
+    'paste_loaded': 'Текст загружен',
+    'paste_empty': 'Файл пуст, отмена.',
     'update_downloading': 'Скачиваю обновление...',
     'update_installing': 'Обновляю зависимости...',
     'update_building': 'Собираю проект...',
@@ -183,7 +188,12 @@ export const I18N: Record<Language, Record<string, string>> = {
     'cmd_voice': 'Voice Input',
     'cmd_new': 'New Chat',
     'cmd_exit': 'Exit',
-
+    'cmd_paste': 'Safe Paste (Editor)',
+    'paste_editor_opening': 'Opening editor for input',
+    'paste_editor_hint': 'Paste text, save and close editor (Ctrl+X -> Y -> Enter for nano)',
+    'paste_loaded': 'Text loaded',
+    'paste_empty': 'File empty, cancelled.',
+    
     // Settings
     'settings_title': 'ACCESS SETTINGS',
     'settings_desc': 'Enable or disable agent capabilities:',

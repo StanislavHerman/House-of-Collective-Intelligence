@@ -12,6 +12,8 @@ import { emitKeypressEvents } from 'readline';
 import { exec } from 'node:child_process';
 import util from 'node:util';
 import path from 'node:path';
+import fs from 'node:fs';
+import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 import Table from 'cli-table3';
 
@@ -40,6 +42,7 @@ export const COMMANDS = [
   { cmd: '/compact', desc: 'cmd_compact' },
   { cmd: '/lang', desc: 'cmd_lang' },
   { cmd: '/new', desc: 'cmd_new' },
+  { cmd: '/paste', desc: 'cmd_paste' },
   { cmd: '/exit', desc: 'cmd_exit' },
 ];
 
@@ -55,6 +58,10 @@ export async function handleCommand(input: string, ctx: CommandContext): Promise
     case '/login':
       await cmdLogin(ctx);
       return false;
+    
+    case '/paste':
+    case '/edit':
+      return await cmdPaste(ctx);
     
     case '/agents':
     case '/chair':
@@ -548,6 +555,43 @@ async function cmdToggleCouncil(ctx: CommandContext) {
             console.log(chalk.gray(`\n  ${t('council_off')}\n`));
         }
     }
+}
+
+async function cmdPaste(ctx: CommandContext): Promise<string | boolean> {
+    const tmpFile = path.join(os.tmpdir(), `council_paste_${Date.now()}.txt`);
+    
+    // Create empty file
+    fs.writeFileSync(tmpFile, '');
+    
+    const editor = process.env.EDITOR || (process.platform === 'win32' ? 'notepad' : 'nano');
+    
+    console.log(chalk.gray(`\n  📝 ${t('paste_editor_opening')} (${editor})...`));
+    console.log(chalk.gray(`  ${t('paste_editor_hint')}`));
+    
+    // Pause stdin so child process can use it
+    if (process.stdin.isTTY) process.stdin.pause();
+
+    try {
+        await execAsync(`${editor} "${tmpFile}"`);
+        
+        if (fs.existsSync(tmpFile)) {
+            const content = fs.readFileSync(tmpFile, 'utf8').trim();
+            fs.unlinkSync(tmpFile);
+            
+            if (content) {
+                console.log(chalk.green(`  ✓ ${t('paste_loaded')} (${content.length} chars)\n`));
+                return content; // Return content to be processed as a question
+            } else {
+                console.log(chalk.yellow(`  ⚠️ ${t('paste_empty')}\n`));
+            }
+        }
+    } catch (e: any) {
+        console.error(chalk.red(`  ✗ ${t('error')}: ${e.message}`));
+    } finally {
+        if (process.stdin.isTTY) process.stdin.resume();
+    }
+    
+    return false;
 }
 
 async function cmdCompact(ctx: CommandContext) {
