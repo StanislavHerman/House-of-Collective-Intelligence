@@ -477,9 +477,32 @@ export class Council {
         try {
             const evalJson = JSON.parse(evalMatch[1]);
             let updateCount = 0;
-            for (const [agentId, result] of Object.entries(evalJson)) {
-                if (result === 'accepted' || result === 'partial' || result === 'rejected') {
-                    this.updateAgentStats(agentId, result as any);
+            const allAgents = this.config.getAgents();
+
+            for (const [key, result] of Object.entries(evalJson)) {
+                if (result !== 'accepted' && result !== 'partial' && result !== 'rejected') continue;
+                
+                let targetId = key;
+                
+                // Try to find agent by ID
+                const byId = allAgents.find(a => a.id === key);
+                if (!byId) {
+                    // Try to find by name (case-insensitive)
+                    const byName = allAgents.find(a => a.name.toLowerCase() === key.toLowerCase());
+                    if (byName) {
+                        targetId = byName.id;
+                    } else {
+                        // Try partial match on name or ID
+                         const byPartial = allAgents.find(a => 
+                             a.name.toLowerCase().includes(key.toLowerCase()) || 
+                             key.toLowerCase().includes(a.name.toLowerCase())
+                         );
+                         if (byPartial) targetId = byPartial.id;
+                    }
+                }
+
+                if (targetId) {
+                    this.updateAgentStats(targetId, result as any);
                     updateCount++;
                 }
             }
