@@ -164,6 +164,13 @@ function printStatus(config: ConfigManager) {
       console.log(chalk.cyan(`  ${t('status_chair')}: `) + chalk.gray(t('status_chair_none')));
   }
 
+  // Секретарь
+  const secretaryId = config.getSecretaryId();
+  const secretary = agents.find(a => a.id === secretaryId);
+  if (secretary) {
+      console.log(chalk.cyan(`  ${t('status_secretary')}: `) + chalk.magenta(`${secretary.name} (${secretary.providerType}/${secretary.model})`));
+  }
+
   // Совет
   const active = agents.filter(a => a.enabled && a.id !== chairId);
   if (active.length > 0) {
