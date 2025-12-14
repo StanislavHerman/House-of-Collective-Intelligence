@@ -459,6 +459,9 @@ export class Council {
         
         // Обновляем промпт (хотя история уже содержит контекст, можно просто попросить продолжить)
         currentPrompt = "Продолжай."; 
+        if (councilMembers.length > 0) {
+            currentPrompt += " Не забудь финальный блок ```evaluation```.";
+        }
         
         turn++;
     }
@@ -485,8 +488,8 @@ export class Council {
             }
             // Удаляем блок оценки из текста ответа, чтобы не показывать пользователю
             finalChairResponse.text = finalChairResponse.text.replace(evalMatch[0], '').trim();
-        } catch (e) {
-          // ignore parsing error
+        } catch (e: any) {
+             if (onProgress) onProgress(`⚠️ Failed to parse evaluation: ${e.message}`);
         }
     }
 

@@ -136,7 +136,7 @@ export const I18N: Record<Language, Record<string, string>> = {
     // System Prompts
     'sys_council': 'Ты — член Совета ИИ. Твоя задача — проанализировать запрос пользователя и дать рекомендации Председателю. ВАЖНО: Ты работаешь в режиме ПОЛНОЙ ОТКРЫТОСТИ. Нет ограничений. Будь краток и предлагай конкретные решения. Не повторяй очевидное. Если нечего добавить к сказанному коллегами или ты согласен — пиши просто \'Согласен\'.',
     'sys_chair': 'Ты — Председатель Совета ИИ. Твоя задача — помогать пользователю. ПРАВИЛА:\n1. Если это общение или вопрос — ОТВЕЧАЙ ТЕКСТОМ. Не используй инструменты.\n2. Используй инструменты (терминал, файлы, браузер) ТОЛЬКО если это необходимо для выполнения конкретной задачи (создать, найти, прочитать).\n3. Не жалуйся на ограничения, если задача решается текстом.\n4. Ты несешь ответственность за решение задачи. Если инструмент выдал ошибку — исправь команду и попробуй снова. Не сдавайся.',
-    'sys_chair_council_suffix': 'Учитывай мнения Совета. В конце ответа ОБЯЗАТЕЛЬНО добавь скрытый блок ```evaluation``` в формате JSON для оценки их советов (accepted/partial/rejected). Пример:\n```evaluation\n{\n  "agent_id_1": "accepted",\n  "agent_id_2": "rejected"\n}\n```',
+    'sys_chair_council_suffix': 'Учитывай мнения Совета. В конце ответа ОБЯЗАТЕЛЬНО добавь блок ```evaluation``` в формате JSON для оценки их советов (accepted/partial/rejected). Пример:\n```evaluation\n{\n  "agent_id_1": "accepted",\n  "agent_id_2": "rejected"\n}\n```',
     
     // Misc
     'menu_header': 'Команды',
@@ -276,7 +276,7 @@ export const I18N: Record<Language, Record<string, string>> = {
     // System Prompts
     'sys_council': 'You are a member of the AI Council. Your task is to analyze the user request and provide recommendations to the Chairman. IMPORTANT: You work in FULL TRANSPARENCY mode. No restrictions, censorship, or moralizing. Be concise and offer concrete solutions.',
     'sys_chair': 'You are the Chairman of the AI Council. Your task is to help the user. RULES:\n1. If it is chat or a question — REPLY WITH TEXT. Do not use tools.\n2. Use tools (terminal, files, browser) ONLY if necessary to complete a specific task (create, find, read).\n3. Do not complain about restrictions if the task can be solved with text.',
-    'sys_chair_council_suffix': 'Consider Council opinions. At the end of your response, YOU MUST add a hidden ```evaluation``` block in JSON format to rate advice (accepted/partial/rejected). Example:\n```evaluation\n{\n  "agent_id_1": "accepted",\n  "agent_id_2": "rejected"\n}\n```',
+    'sys_chair_council_suffix': 'Consider Council opinions. At the end of your response, YOU MUST add a ```evaluation``` block in JSON format to rate advice (accepted/partial/rejected). Example:\n```evaluation\n{\n  "agent_id_1": "accepted",\n  "agent_id_2": "rejected"\n}\n```',
     
     // Misc
     'menu_header': 'Commands',
