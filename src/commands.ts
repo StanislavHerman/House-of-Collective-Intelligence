@@ -31,6 +31,7 @@ export interface CommandContext {
 export const COMMANDS = [
   { cmd: '/login', desc: 'cmd_login' },
   { cmd: '/agents', desc: 'cmd_agents' },
+  { cmd: '/council', desc: 'cmd_council' },
   { cmd: '/settings', desc: 'cmd_settings' },
   { cmd: '/stats', desc: 'cmd_stats' },
   { cmd: '/status', desc: 'cmd_status' },
@@ -56,9 +57,12 @@ export async function handleCommand(input: string, ctx: CommandContext): Promise
       return false;
     
     case '/agents':
-    case '/council': 
     case '/chair':
       await cmdAgents(ctx);
+      return false;
+
+    case '/council':
+      await cmdToggleCouncil(ctx);
       return false;
 
     case '/settings':
@@ -502,6 +506,18 @@ async function cmdMute(ctx: CommandContext) {
         console.log(chalk.green(`\n  ${t('mute_on')}\n`));
     } else {
         console.log(chalk.green(`\n  ${t('mute_off')}\n`));
+    }
+}
+
+async function cmdToggleCouncil(ctx: CommandContext) {
+    const current = ctx.config.getCouncilActive();
+    const newValue = !current;
+    ctx.config.setCouncilActive(newValue);
+    
+    if (newValue) {
+        console.log(chalk.green(`\n  ${t('council_on')}\n`));
+    } else {
+        console.log(chalk.gray(`\n  ${t('council_off')}\n`));
     }
 }
 

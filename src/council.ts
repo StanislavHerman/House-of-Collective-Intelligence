@@ -493,8 +493,9 @@ export class Council {
 
     if (!finalChairResponse) throw new Error("No response from chair");
 
-    // Запуск Секретаря для оценки эффективности (если есть Секретарь и был Совет)
-    if (currentSecretaryId && councilResponses.length > 0) {
+    // Запуск Секретаря для оценки эффективности (если есть Секретарь, был Совет и режим Совета активен)
+    const isCouncilActive = this.config.getCouncilActive();
+    if (isCouncilActive && currentSecretaryId && councilResponses.length > 0) {
         await this.evaluateEfficiency(currentSecretaryId, question, councilResponses, finalChairResponse.text, onProgress);
     }
 

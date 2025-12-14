@@ -31,6 +31,7 @@ export interface AppConfig {
   chairAgentId?: string;
   secretaryAgentId?: string;
   muteMode?: boolean; // Скрывать ответы совета
+  councilActive?: boolean; // Активен ли Совет и Секретарь
   autoCompact?: boolean; // Автоматическое сжатие контекста
   autoCompactLimit?: number; // Лимит сообщений для автосжатия (по умолчанию 20)
   language?: 'ru' | 'en'; // Язык интерфейса

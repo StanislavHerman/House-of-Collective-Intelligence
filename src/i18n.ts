@@ -5,6 +5,7 @@ export const I18N: Record<Language, Record<string, string>> = {
     // Menu Commands
     'cmd_login': 'Ключи API',
     'cmd_agents': 'Управление агентами',
+    'cmd_council': 'Вкл/Выкл Совет',
     'cmd_stats': 'Эффективность',
     'cmd_status': 'Статус команды',
     'cmd_mute': 'Тихий режим',
@@ -165,6 +166,7 @@ export const I18N: Record<Language, Record<string, string>> = {
     // Menu Commands
     'cmd_login': 'API Keys',
     'cmd_agents': 'Manage Agents',
+    'cmd_council': 'Toggle Council',
     'cmd_stats': 'Efficiency',
     'cmd_status': 'Team Status',
     'cmd_mute': 'Quiet Mode',
@@ -256,6 +258,8 @@ export const I18N: Record<Language, Record<string, string>> = {
     // Commands Output
     'mute_on': '✓ Quiet Mode ON (Council responses hidden)',
     'mute_off': '✓ Quiet Mode OFF (Council responses visible)',
+    'council_on': '🟢 Council and Secretary ENABLED. All agents active.',
+    'council_off': '⚪ Council and Secretary DISABLED. Only Chairman active (Cost saving).',
     'compact_done': '✓ Context compacted. Messages removed',
     'compact_left': 'Remaining',
     'stats_title': 'COUNCIL EFFICIENCY',

@@ -150,6 +150,15 @@ export class ConfigManager {
     this.save();
   }
 
+  getCouncilActive(): boolean {
+      return this.config.councilActive ?? true;
+  }
+
+  setCouncilActive(value: boolean) {
+      this.config.councilActive = value;
+      this.save();
+  }
+
   getAutoCompact(): boolean {
       return this.config.autoCompact ?? true;
   }
