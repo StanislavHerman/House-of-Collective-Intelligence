@@ -547,10 +547,8 @@ export class Council {
               }
           }
           
-          if (updateCount > 0 && onProgress) {
-              onProgress(`${t('agents_updated')} (Efficiency updated for ${updateCount} agents)`);
-          }
-
+          // Silently updated stats (User requested no output in chat)
+          
       } catch (e: any) {
           if (onProgress) onProgress(`⚠️ Secretary error: ${e.message}`);
       }
