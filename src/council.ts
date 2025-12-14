@@ -283,13 +283,20 @@ export class Council {
               const apiKey = this.config.getApiKey(agent.providerType);
               const identityPrompt = `Ты — модель ${agent.model} от провайдера ${agent.providerType}. ${COUNCIL_SYSTEM_PROMPT}`;
               
-              if (onProgress) onProgress(`${agent.name} (${agent.model}): ${t('thinking')}`);
-              
               // Pass CLEANED history without the last message to prevent pattern matching
               const historyWithoutCurrent = this.getCleanHistory().slice(0, -1);
-              const response = await sendToProvider(agent, apiKey || '', question, historyWithoutCurrent, identityPrompt, signal);
               
-              if (onProgress) onProgress(`${agent.name} (${agent.model}): ${t('answer_received')}`);
+              // Estimate tokens for logging
+              let estimatedTokens = estimateTokens(identityPrompt) + estimateTokens(question);
+              for (const m of historyWithoutCurrent) estimatedTokens += estimateTokens(m.text) + (m.images?.length || 0) * 1000;
+
+              if (onProgress) onProgress(`${agent.name} (${agent.model}): ${t('thinking')} (~${Math.round(estimatedTokens/1000)}k tok)`);
+              
+              const startT = Date.now();
+              const response = await sendToProvider(agent, apiKey || '', question, historyWithoutCurrent, identityPrompt, signal);
+              const duration = ((Date.now() - startT) / 1000).toFixed(1);
+              
+              if (onProgress) onProgress(`${agent.name} (${agent.model}): ${t('answer_received')} (${duration}s)`);
               if (onCouncilResponse) onCouncilResponse(response);
               return response;
             });
