@@ -102,9 +102,10 @@ export class ToolManager {
           wrappedCmd = `${cmd} ; Write-Host "__CWD__" ; (Get-Location).Path`;
           shell = 'powershell.exe';
       } else {
-          // Bash wrapper
+          // Mac/Linux wrapper
+          // Use zsh on macOS for better compatibility (globbing etc), bash on Linux
+          shell = process.platform === 'darwin' ? '/bin/zsh' : '/bin/bash';
           wrappedCmd = `${cmd} && echo "__CWD__" && pwd`;
-          shell = '/bin/bash';
       }
       
       // 30s timeout for commands to prevent hanging
