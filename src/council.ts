@@ -102,11 +102,18 @@ export class Council {
     const allAgents = this.config.getAgents();
     const enabledAgents = allAgents.filter(a => a.enabled);
     const currentChairAgentId = this.config.getChairId();
+    const currentSecretaryId = this.config.getSecretaryId();
 
     let chairAgent: AgentConfig | undefined = enabledAgents.find((a: AgentConfig) => a.id === currentChairAgentId);
     if (!chairAgent && enabledAgents.length > 0) chairAgent = enabledAgents[0];
 
-    // Умное сжатие (Smart Auto Compact)
+    // Secretary should NOT be part of the active council voting
+    const councilMembers = enabledAgents.filter((a: AgentConfig) => a.id !== chairAgent!.id && a.id !== currentSecretaryId);
+
+    let chairSystemPromptText = t('sys_chair');
+    if (councilMembers.length > 0) {
+        chairSystemPromptText += " " + t('sys_chair_council_suffix');
+    }
     // Опираемся на контекстное окно Председателя
     if (this.config.getAutoCompact() && chairAgent) {
         const modelPrice = getModelInfo(chairAgent.model);
@@ -485,9 +492,6 @@ export class Council {
         
         // Обновляем промпт (хотя история уже содержит контекст, можно просто попросить продолжить)
         currentPrompt = "Продолжай."; 
-        if (councilMembers.length > 0) {
-            currentPrompt += " Не забудь финальный блок ```evaluation```.";
-        }
         
         turn++;
     }
@@ -496,65 +500,67 @@ export class Council {
 
     if (!finalChairResponse) throw new Error("No response from chair");
 
-    // Обработка оценки (Evaluation)
-    const evalRegex = /```evaluation\s*([\s\S]*?)\s*```/;
-    const evalMatch = evalRegex.exec(finalChairResponse.text);
-    if (evalMatch) {
-        try {
-            let rawJson = evalMatch[1].trim();
-            // Clean up nested markdown if present
-            rawJson = rawJson.replace(/^```json\s*/, '').replace(/^```\s*/, '').replace(/\s*```$/, '');
-            
-            // Find the JSON object substring (first { to last })
-            const firstBrace = rawJson.indexOf('{');
-            const lastBrace = rawJson.lastIndexOf('}');
-            
-            if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-                rawJson = rawJson.substring(firstBrace, lastBrace + 1);
-            }
-            
-            const evalJson = JSON.parse(rawJson);
-            let updateCount = 0;
-            const allAgents = this.config.getAgents();
-
-            for (const [key, result] of Object.entries(evalJson)) {
-                if (result !== 'accepted' && result !== 'partial' && result !== 'rejected') continue;
-                
-                let targetId = key;
-                
-                // Try to find agent by ID
-                const byId = allAgents.find(a => a.id === key);
-                if (!byId) {
-                    // Try to find by name (case-insensitive)
-                    const byName = allAgents.find(a => a.name.toLowerCase() === key.toLowerCase());
-                    if (byName) {
-                        targetId = byName.id;
-                    } else {
-                        // Try partial match on name or ID
-                         const byPartial = allAgents.find(a => 
-                             a.name.toLowerCase().includes(key.toLowerCase()) || 
-                             key.toLowerCase().includes(a.name.toLowerCase())
-                         );
-                         if (byPartial) targetId = byPartial.id;
-                    }
-                }
-
-                if (targetId) {
-                    this.updateAgentStats(targetId, result as any);
-                    updateCount++;
-                }
-            }
-            if (updateCount > 0 && onProgress) {
-                onProgress(t('agents_updated') + ` (Efficiency: ${updateCount})`);
-            }
-            // Удаляем блок оценки из текста ответа, чтобы не показывать пользователю
-            finalChairResponse.text = finalChairResponse.text.replace(evalMatch[0], '').trim();
-        } catch (e: any) {
-             if (onProgress) onProgress(`⚠️ Failed to parse evaluation: ${e.message}`);
-        }
+    // Запуск Секретаря для оценки эффективности (если есть Секретарь и был Совет)
+    if (currentSecretaryId && councilResponses.length > 0) {
+        await this.evaluateEfficiency(currentSecretaryId, question, councilResponses, finalChairResponse.text, onProgress);
     }
 
     return { councilResponses, chairResponse: finalChairResponse };
+  }
+
+  private async evaluateEfficiency(
+      secretaryId: string, 
+      question: string, 
+      councilResponses: ProviderResponse[], 
+      chairAnswer: string,
+      onProgress?: (msg: string) => void
+  ) {
+      const secretary = this.config.getAgent(secretaryId);
+      if (!secretary) return;
+
+      if (onProgress) onProgress(`📝 ${t('status_secretary')} analyzing efficiency...`);
+
+      const apiKey = this.config.getApiKey(secretary.providerType);
+      
+      let prompt = `User Question: "${question}"\n\n`;
+      prompt += `--- COUNCIL ADVICE ---\n`;
+      councilResponses.forEach(r => {
+          const agent = this.config.getAgent(r.providerId);
+          const name = agent ? agent.name : r.providerId;
+          prompt += `[ID: ${r.providerId}] ${name}: ${r.text.substring(0, 1000)}\n\n`;
+      });
+      prompt += `----------------------\n\n`;
+      prompt += `--- CHAIRMAN DECISION ---\n${chairAnswer.substring(0, 3000)}\n-------------------------\n`;
+      prompt += `\nEvaluate usage of advice. Return strictly JSON.`;
+
+      try {
+          const res = await sendToProvider(secretary, apiKey || '', prompt, [], t('sys_secretary'));
+          
+          let rawJson = res.text.trim();
+          rawJson = rawJson.replace(/^```json\s*/, '').replace(/^```\s*/, '').replace(/\s*```$/, '');
+          const firstBrace = rawJson.indexOf('{');
+          const lastBrace = rawJson.lastIndexOf('}');
+          if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+              rawJson = rawJson.substring(firstBrace, lastBrace + 1);
+          }
+
+          const evalJson = JSON.parse(rawJson);
+          let updateCount = 0;
+          
+          for (const [agentId, result] of Object.entries(evalJson)) {
+              if (result === 'accepted' || result === 'partial' || result === 'rejected') {
+                  this.updateAgentStats(agentId, result as any);
+                  updateCount++;
+              }
+          }
+          
+          if (updateCount > 0 && onProgress) {
+              onProgress(`${t('agents_updated')} (Efficiency updated for ${updateCount} agents)`);
+          }
+
+      } catch (e: any) {
+          if (onProgress) onProgress(`⚠️ Secretary error: ${e.message}`);
+      }
   }
 
   private parseTools(text: string): { type: 'command' | 'file' | 'read' | 'browser_open' | 'browser_search' | 'browser_act' | 'desktop_screenshot' | 'desktop_act', content: string, arg: string }[] {

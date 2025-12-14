@@ -29,6 +29,7 @@ export interface AppConfig {
   apiKeys: Record<string, string>; // ProviderType -> API Key
   agents: AgentConfig[];
   chairAgentId?: string;
+  secretaryAgentId?: string;
   muteMode?: boolean; // Скрывать ответы совета
   autoCompact?: boolean; // Автоматическое сжатие контекста
   autoCompactLimit?: number; // Лимит сообщений для автосжатия (по умолчанию 20)

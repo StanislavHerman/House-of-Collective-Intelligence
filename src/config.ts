@@ -100,6 +100,12 @@ export class ConfigManager {
                   }
               }
           }
+          
+          // Check if secretary was removed
+          if (this.config.secretaryAgentId && !this.config.agents.find(a => a.id === this.config.secretaryAgentId)) {
+              this.config.secretaryAgentId = undefined;
+          }
+
           this.save();
       }
   }
@@ -217,6 +223,9 @@ export class ConfigManager {
     if (this.config.chairAgentId === id) {
       this.config.chairAgentId = undefined;
     }
+    if (this.config.secretaryAgentId === id) {
+        this.config.secretaryAgentId = undefined;
+    }
     this.save();
   }
   
@@ -235,5 +244,14 @@ export class ConfigManager {
   setChairId(id: string | undefined) {
     this.config.chairAgentId = id;
     this.save();
+  }
+
+  getSecretaryId(): string | undefined {
+      return this.config.secretaryAgentId;
+  }
+
+  setSecretaryId(id: string | undefined) {
+      this.config.secretaryAgentId = id;
+      this.save();
   }
 }

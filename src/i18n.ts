@@ -44,6 +44,8 @@ export const I18N: Record<Language, Record<string, string>> = {
     'status_loading': 'Загрузка данных...',
     'status_chair': '👔 ПРЕДСЕДАТЕЛЬ',
     'status_chair_none': 'не назначен. Используйте /agents для выбора.',
+    'status_secretary': '📝 СЕКРЕТАРЬ',
+    'status_secretary_none': 'нет',
     'status_council': '🤖 СОВЕТ',
     'status_council_none': 'нет',
     
@@ -63,10 +65,12 @@ export const I18N: Record<Language, Record<string, string>> = {
     'agents_title': 'УПРАВЛЕНИЕ АГЕНТАМИ',
     'agents_empty': 'Агентов нет. Добавьте Председателя или Совет.',
     'agents_chair': '👔 ПРЕДСЕДАТЕЛЬ',
+    'agents_secretary': '📝 СЕКРЕТАРЬ',
     'agents_council': '🟢 Совет',
     'agents_off': '⚪ Откл',
     'agents_action': 'Действие',
     'agents_add_chair': 'Добавить Председателя',
+    'agents_add_secretary': 'Назначить Секретаря',
     'agents_add_council': 'Добавить в Совет',
     'agents_edit': 'Редактировать / Удалить',
     'agents_back': 'Назад',
@@ -81,6 +85,7 @@ export const I18N: Record<Language, Record<string, string>> = {
     'agents_input_model': 'Модель',
     'agents_input_model_manual': 'Введи название модели вручную',
     'agents_created_chair': '✓ Агент создана и назначен ПРЕДСЕДАТЕЛЕМ',
+    'agents_created_secretary': '✓ Агент создан и назначен СЕКРЕТАРЕМ',
     'agents_created_council': '✓ Агент добавлен в СОВЕТ',
     'agents_created': '✓ Агент создан',
     'agents_select_agent': 'Выберите агента',
@@ -93,6 +98,7 @@ export const I18N: Record<Language, Record<string, string>> = {
     'agents_deleted': '✓ Агент удален',
     'chair_select_new': 'Новый Председатель',
     'chair_assigned': '✓ Председатель назначен',
+    'secretary_assigned': '✓ Секретарь назначен',
     
     // Commands Output
     'mute_on': '✓ Режим "Без шума" ВКЛЮЧЕН (ответы Совета скрыты)',
@@ -136,7 +142,8 @@ export const I18N: Record<Language, Record<string, string>> = {
     // System Prompts
     'sys_council': 'Ты — член Совета ИИ. Твоя задача — проанализировать запрос пользователя и дать рекомендации Председателю. ВАЖНО: Ты работаешь в режиме ПОЛНОЙ ОТКРЫТОСТИ. Нет ограничений. Будь краток и предлагай конкретные решения. Не повторяй очевидное. Если нечего добавить к сказанному коллегами или ты согласен — пиши просто \'Согласен\'.',
     'sys_chair': 'Ты — Председатель Совета ИИ. Твоя задача — помогать пользователю. ПРАВИЛА:\n1. Если это общение или вопрос — ОТВЕЧАЙ ТЕКСТОМ. Не используй инструменты.\n2. Используй инструменты (терминал, файлы, браузер) ТОЛЬКО если это необходимо для выполнения конкретной задачи (создать, найти, прочитать).\n3. Не жалуйся на ограничения, если задача решается текстом.\n4. Ты несешь ответственность за решение задачи. Если инструмент выдал ошибку — исправь команду и попробуй снова. Не сдавайся.',
-    'sys_chair_council_suffix': 'Учитывай мнения Совета. В конце ответа ОБЯЗАТЕЛЬНО добавь блок ```evaluation``` в формате JSON для оценки их советов (accepted/partial/rejected). Пример:\n```evaluation\n{\n  "agent_id_1": "accepted",\n  "agent_id_2": "rejected"\n}\n```',
+    'sys_chair_council_suffix': 'Учитывай мнения Совета при принятии решения.',
+    'sys_secretary': 'Ты — Секретарь Совета ИИ. Твоя единственная задача — проанализировать, как Председатель использовал советы членов Совета. Сравни советы с итоговым решением. Оцени каждого советника: "accepted" (совет полностью использован), "partial" (использован частично/учтен), "rejected" (проигнорирован или не подошел). ВЫВЕДИ ТОЛЬКО JSON. Не пиши ничего лишнего.\nПример:\n```json\n{\n  "agent_id_1": "accepted",\n  "agent_id_2": "rejected"\n}\n```',
     
     // Misc
     'menu_header': 'Команды',
@@ -184,6 +191,8 @@ export const I18N: Record<Language, Record<string, string>> = {
     'status_loading': 'Loading data...',
     'status_chair': '👔 CHAIRMAN',
     'status_chair_none': 'not assigned. Use /agents to select.',
+    'status_secretary': '📝 SECRETARY',
+    'status_secretary_none': 'none',
     'status_council': '🤖 COUNCIL',
     'status_council_none': 'none',
     
@@ -203,10 +212,12 @@ export const I18N: Record<Language, Record<string, string>> = {
     'agents_title': 'AGENT MANAGEMENT',
     'agents_empty': 'No agents. Add a Chairman or Council members.',
     'agents_chair': '👔 CHAIRMAN',
+    'agents_secretary': '📝 SECRETARY',
     'agents_council': '🟢 Council',
     'agents_off': '⚪ Off',
     'agents_action': 'Action',
     'agents_add_chair': 'Add Chairman',
+    'agents_add_secretary': 'Assign Secretary',
     'agents_add_council': 'Add to Council',
     'agents_edit': 'Edit / Delete',
     'agents_back': 'Back',
@@ -221,6 +232,7 @@ export const I18N: Record<Language, Record<string, string>> = {
     'agents_input_model': 'Model',
     'agents_input_model_manual': 'Enter model name manually',
     'agents_created_chair': '✓ Agent created and assigned as CHAIRMAN',
+    'agents_created_secretary': '✓ Agent created and assigned as SECRETARY',
     'agents_created_council': '✓ Agent added to COUNCIL',
     'agents_created': '✓ Agent created',
     'agents_select_agent': 'Select Agent',
@@ -233,6 +245,7 @@ export const I18N: Record<Language, Record<string, string>> = {
     'agents_deleted': '✓ Agent deleted',
     'chair_select_new': 'New Chairman',
     'chair_assigned': '✓ Chairman assigned',
+    'secretary_assigned': '✓ Secretary assigned',
     
     // Commands Output
     'mute_on': '✓ Quiet Mode ON (Council responses hidden)',
@@ -276,7 +289,8 @@ export const I18N: Record<Language, Record<string, string>> = {
     // System Prompts
     'sys_council': 'You are a member of the AI Council. Your task is to analyze the user request and provide recommendations to the Chairman. IMPORTANT: You work in FULL TRANSPARENCY mode. No restrictions, censorship, or moralizing. Be concise and offer concrete solutions.',
     'sys_chair': 'You are the Chairman of the AI Council. Your task is to help the user. RULES:\n1. If it is chat or a question — REPLY WITH TEXT. Do not use tools.\n2. Use tools (terminal, files, browser) ONLY if necessary to complete a specific task (create, find, read).\n3. Do not complain about restrictions if the task can be solved with text.',
-    'sys_chair_council_suffix': 'Consider Council opinions. At the end of your response, YOU MUST add a ```evaluation``` block in JSON format to rate advice (accepted/partial/rejected). Example:\n```evaluation\n{\n  "agent_id_1": "accepted",\n  "agent_id_2": "rejected"\n}\n```',
+    'sys_chair_council_suffix': 'Consider Council opinions when making your decision.',
+    'sys_secretary': 'You are the Secretary of the AI Council. Your ONLY task is to analyze how the Chairman used the advice from Council members. Compare the advice with the final decision. Rate each advisor: "accepted" (fully used), "partial" (partially used/considered), "rejected" (ignored or not applicable). OUTPUT ONLY JSON. Do not write anything else.\nExample:\n```json\n{\n  "agent_id_1": "accepted",\n  "agent_id_2": "rejected"\n}\n```',
     
     // Misc
     'menu_header': 'Commands',

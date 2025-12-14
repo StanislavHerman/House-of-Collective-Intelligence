@@ -226,14 +226,17 @@ async function cmdAgents(ctx: CommandContext) {
     while (true) {
         const agents = ctx.config.getAgents();
         const chairId = ctx.config.getChairId();
+        const secretaryId = ctx.config.getSecretaryId();
         
         console.log(chalk.cyan(`\n  ${t('agents_title')}`));
         if (agents.length === 0) {
             console.log(chalk.gray(`  ${t('agents_empty')}`));
         } else {
             agents.forEach(a => {
-                const isChair = a.id === chairId;
-                const status = isChair ? chalk.green(t('agents_chair')) : (a.enabled ? chalk.blue(t('agents_council')) : chalk.gray(t('agents_off')));
+                let status = a.enabled ? chalk.blue(t('agents_council')) : chalk.gray(t('agents_off'));
+                if (a.id === chairId) status = chalk.green(t('agents_chair'));
+                if (a.id === secretaryId) status = chalk.magenta(t('agents_secretary'));
+                
                 console.log(`  ${a.name.padEnd(20)} [${a.providerType}/${a.model}]  ${status}`);
             });
         }
@@ -241,6 +244,7 @@ async function cmdAgents(ctx: CommandContext) {
 
         const action = await ui.select(t('agents_action'), [
             { label: t('agents_add_chair'), value: 'add_chair' },
+            { label: t('agents_add_secretary'), value: 'add_secretary' },
             { label: t('agents_add_council'), value: 'add_council' },
             { label: t('agents_edit'), value: 'edit' },
             { label: t('agents_back'), value: 'back' }
@@ -249,12 +253,13 @@ async function cmdAgents(ctx: CommandContext) {
         if (!action || action === 'back') break;
         
         if (action === 'add_chair') await createAgent(ctx, undefined, 'chair');
+        if (action === 'add_secretary') await createAgent(ctx, undefined, 'secretary');
         if (action === 'add_council') await createAgent(ctx, undefined, 'council');
         if (action === 'edit') await editAgent(ctx);
     }
 }
 
-async function createAgent(ctx: CommandContext, preselectedType?: ProviderType, role?: 'chair' | 'council') {
+async function createAgent(ctx: CommandContext, preselectedType?: ProviderType, role?: 'chair' | 'council' | 'secretary') {
     const types: ProviderType[] = ['openai', 'anthropic', 'deepseek', 'grok', 'gemini', 'perplexity', 'openrouter'];
     
     let type = preselectedType;
@@ -328,6 +333,12 @@ async function createAgent(ctx: CommandContext, preselectedType?: ProviderType, 
     if (role === 'chair') {
         ctx.config.setChairId(newAgent.id);
         console.log(chalk.green(`  ${t('agents_created_chair').replace('Агент', name)}\n`));
+    } else if (role === 'secretary') {
+        ctx.config.setSecretaryId(newAgent.id);
+        // Secretary is usually NOT in the council to avoid noise, but strictly speaking "enabled" just means it exists.
+        // We probably want to disable it for council voting, but keep it active.
+        // For now, enabled=true is fine, but we will filter it out of council list in council.ts
+        console.log(chalk.green(`  ${t('agents_created_secretary').replace('Агент', name)}\n`));
     } else if (role === 'council') {
         console.log(chalk.green(`  ${t('agents_created_council').replace('Агент', name)}\n`));
     } else {
@@ -412,7 +423,16 @@ async function cmdStatus(ctx: CommandContext) {
         console.log(chalk.cyan(`  ${t('status_chair')}: `) + chalk.gray(t('status_chair_none')));
     }
     
-    const council = agents.filter(a => a.enabled && a.id !== chairId);
+    // Secretary
+    const secretaryId = ctx.config.getSecretaryId();
+    const secretary = agents.find(a => a.id === secretaryId);
+    if (secretary) {
+        const bal = balances[secretary.providerType] || '';
+        const balStr = bal ? chalk.yellow(` [${bal}]`) : '';
+        console.log(chalk.cyan(`  ${t('status_secretary')}: `) + chalk.magenta(`${secretary.name} (${secretary.providerType}/${secretary.model})`) + balStr);
+    }
+
+    const council = agents.filter(a => a.enabled && a.id !== chairId && a.id !== secretaryId);
     if (council.length > 0) {
         console.log(chalk.cyan(`  ${t('status_council')}:`));
         council.forEach(a => {
