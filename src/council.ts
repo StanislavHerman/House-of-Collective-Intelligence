@@ -501,7 +501,19 @@ export class Council {
     const evalMatch = evalRegex.exec(finalChairResponse.text);
     if (evalMatch) {
         try {
-            const evalJson = JSON.parse(evalMatch[1]);
+            let rawJson = evalMatch[1].trim();
+            // Clean up nested markdown if present
+            rawJson = rawJson.replace(/^```json\s*/, '').replace(/^```\s*/, '').replace(/\s*```$/, '');
+            
+            // Find the JSON object substring (first { to last })
+            const firstBrace = rawJson.indexOf('{');
+            const lastBrace = rawJson.lastIndexOf('}');
+            
+            if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+                rawJson = rawJson.substring(firstBrace, lastBrace + 1);
+            }
+            
+            const evalJson = JSON.parse(rawJson);
             let updateCount = 0;
             const allAgents = this.config.getAgents();
 
