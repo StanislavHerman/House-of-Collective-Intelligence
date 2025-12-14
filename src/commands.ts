@@ -511,13 +511,31 @@ async function cmdMute(ctx: CommandContext) {
 
 async function cmdToggleCouncil(ctx: CommandContext) {
     const current = ctx.config.getCouncilActive();
-    const newValue = !current;
-    ctx.config.setCouncilActive(newValue);
     
-    if (newValue) {
-        console.log(chalk.green(`\n  ${t('council_on')}\n`));
-    } else {
-        console.log(chalk.gray(`\n  ${t('council_off')}\n`));
+    console.log(chalk.cyan(`\n  ${t('council_menu_title')}`));
+    
+    const choice = await ui.select('', [
+        { label: current ? chalk.gray(t('council_menu_enable')) + chalk.green(' (Active)') : t('council_menu_enable'), value: 'enable' },
+        { label: !current ? chalk.gray(t('council_menu_disable')) + chalk.green(' (Active)') : t('council_menu_disable'), value: 'disable' },
+        { label: t('council_menu_cancel'), value: 'cancel' }
+    ]);
+
+    if (!choice || choice === 'cancel') return;
+
+    if (choice === 'enable') {
+        if (!current) {
+            ctx.config.setCouncilActive(true);
+            console.log(chalk.green(`\n  ${t('council_on')}\n`));
+        } else {
+             console.log(chalk.gray(`\n  ${t('council_on')}\n`));
+        }
+    } else if (choice === 'disable') {
+        if (current) {
+            ctx.config.setCouncilActive(false);
+            console.log(chalk.gray(`\n  ${t('council_off')}\n`));
+        } else {
+            console.log(chalk.gray(`\n  ${t('council_off')}\n`));
+        }
     }
 }
 
