@@ -10,8 +10,15 @@ import { t, setLanguage } from './i18n.js';
 import { emitKeypressEvents } from 'node:readline';
 import { exec } from 'node:child_process';
 import util from 'node:util';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const execAsync = util.promisify(exec);
+
+// Determine project root (assuming dist/index.js -> project_root)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const projectRoot = path.join(__dirname, '..');
 
 async function main() {
   const config = new ConfigManager();
@@ -211,7 +218,7 @@ function getStatusBar(ctx: { history: HistoryManager, config: ConfigManager, cou
 
 async function checkUpdate() {
     try {
-        const { stdout } = await execAsync('git fetch && git status -uno');
+        const { stdout } = await execAsync('git fetch && git status -uno', { cwd: projectRoot });
         if (!stdout.includes('Your branch is up to date') && !stdout.includes('up to date with')) {
              // Basic check: if git status says we are behind or have incoming commits
              // But 'Your branch is up to date' is the standard message when clean.

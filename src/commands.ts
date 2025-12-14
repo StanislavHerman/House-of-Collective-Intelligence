@@ -11,8 +11,15 @@ import { t, setLanguage, getLanguage } from './i18n.js';
 import { emitKeypressEvents } from 'readline';
 import { exec } from 'node:child_process';
 import util from 'node:util';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const execAsync = util.promisify(exec);
+
+// Determine project root (assuming dist/commands.js -> project_root)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const projectRoot = path.join(__dirname, '..');
 
 export interface CommandContext {
   config: ConfigManager;
@@ -424,7 +431,7 @@ async function cmdUpdate(ctx: CommandContext) {
     
     try {
         // 1. Check for updates
-        const { stdout: status } = await execAsync('git fetch && git status -uno');
+        const { stdout: status } = await execAsync('git fetch && git status -uno', { cwd: projectRoot });
         
         if (status.includes('Your branch is up to date')) {
             console.log(chalk.green(`  ${t('update_up_to_date')}\n`));
@@ -442,15 +449,15 @@ async function cmdUpdate(ctx: CommandContext) {
 
         // 2. Pull
         console.log(chalk.gray(`  ${t('update_downloading')}`));
-        await execAsync('git pull');
+        await execAsync('git pull', { cwd: projectRoot });
 
         // 3. Install
         console.log(chalk.gray(`  ${t('update_installing')}`));
-        await execAsync('npm install');
+        await execAsync('npm install', { cwd: projectRoot });
 
         // 4. Build
         console.log(chalk.gray(`  ${t('update_building')}`));
-        await execAsync('npm run build');
+        await execAsync('npm run build', { cwd: projectRoot });
 
         console.log(chalk.green(`\n  ${t('update_success')}\n`));
         process.exit(0);
