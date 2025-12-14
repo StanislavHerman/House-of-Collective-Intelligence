@@ -1,10 +1,12 @@
 // UI функции — меню, ввод
 import { createInterface, emitKeypressEvents } from 'node:readline';
+import { PassThrough } from 'node:stream';
 import chalk from 'chalk';
 import { t } from './i18n.js';
 
 // Singleton Readline Interface
 let rl: ReturnType<typeof createInterface> | null = null;
+let pasteProxy: PassThrough | null = null;
 
 export function initReadline() {
   if (rl) return;
@@ -12,8 +14,63 @@ export function initReadline() {
   // Enable Bracketed Paste Mode
   process.stdout.write('\x1b[?2004h');
 
+  // Create a proxy stream to intercept paste events
+  pasteProxy = new PassThrough();
+  
+  let inPaste = false;
+  let pasteBuffer = '';
+
+  const onData = (chunk: Buffer) => {
+      let str = chunk.toString();
+      
+      // Paste Start
+      if (str.includes('\x1b[200~')) {
+          inPaste = true;
+          str = str.replace(/\x1b\[200~/g, '');
+          pasteBuffer = ''; // Reset buffer
+      }
+
+      // Paste End
+      if (str.includes('\x1b[201~')) {
+          inPaste = false;
+          // Capture the part before the end tag
+          const parts = str.split('\x1b[201~');
+          pasteBuffer += parts[0];
+          
+          // Process the full paste buffer
+          // 1. Strip trailing newlines (prevents immediate submit)
+          pasteBuffer = pasteBuffer.replace(/(\r\n|\n|\r)+$/, '');
+          
+          // 2. Replace internal newlines with spaces (prevents multiline execution)
+          pasteBuffer = pasteBuffer.replace(/(\r\n|\n|\r)/g, ' ');
+          
+          // Push sanitized paste
+          pasteProxy?.write(pasteBuffer);
+          
+          // Push the rest of the chunk (after the end tag)
+          if (parts[1]) pasteProxy?.write(parts[1]);
+          
+          pasteBuffer = '';
+          return;
+      }
+
+      if (inPaste) {
+          pasteBuffer += str;
+      } else {
+          pasteProxy?.write(chunk);
+      }
+  };
+
+  process.stdin.on('data', onData);
+
+  // Clean up listener when RL closes? 
+  // We attach it to process.stdin which is global. We should remove it on close.
+  (pasteProxy as any)._cleanup = () => {
+      process.stdin.removeListener('data', onData);
+  };
+
   rl = createInterface({
-    input: process.stdin,
+    input: pasteProxy, // Use our proxy
     output: process.stdout,
     terminal: true,
     historySize: 200
@@ -31,8 +88,14 @@ export function closeReadline() {
   if (rl) {
       // Disable Bracketed Paste Mode
       process.stdout.write('\x1b[?2004l');
+      
+      if (pasteProxy && (pasteProxy as any)._cleanup) {
+          (pasteProxy as any)._cleanup();
+      }
+      
       rl.close();
       rl = null;
+      pasteProxy = null;
   }
 }
 
