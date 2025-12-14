@@ -176,53 +176,72 @@ function printStatus(config: ConfigManager) {
 
 async function askCouncil(question: string, council: Council, config: ConfigManager, signal?: AbortSignal) {
   console.log('');
-  const result = await council.ask(question, (msg) => {
-    console.log(chalk.gray(`  ⏳ ${msg}`));
-  }, signal, (res) => {
-      // Callback for individual council responses
-      if (config.getMuteMode()) return; // В тихом режиме не выводим ответы Совета
+  
+  const spinner = ora({
+      text: t('thinking'),
+      color: 'cyan'
+  }).start();
 
-      if (!res.error) {
-          const agent = config.getAgent(res.providerId);
-          const name = agent ? agent.name : res.providerId;
-          const model = agent ? agent.model : res.model;
-          
-          console.log(chalk.gray(`\n  ┌── [${name}] (${model})`));
-          
-          // Display reasoning for council members if available
-          if (res.reasoning) {
-              console.log(chalk.gray(`  │`));
-              console.log(chalk.gray(`  │  💭 ${t('reasoning') || 'Reasoning'}:`));
-              // Indent and dim the reasoning
-              res.reasoning.split('\n').forEach(line => {
-                  console.log(chalk.gray(`  │    ${chalk.italic(line)}`));
-              });
-          }
+  try {
+    const result = await council.ask(question, (msg) => {
+      spinner.text = msg;
+    }, signal, (res) => {
+        // Callback for individual council responses
+        if (config.getMuteMode()) return; // В тихом режиме не выводим ответы Совета
 
-          console.log(chalk.gray(`  │`));
-          console.log(chalk.gray(res.text.split('\n').map(l => `  │ ${l}`).join('\n')));
-          console.log(chalk.gray(`  └──────────────────────────────────────────`));
-      } else {
-          const agent = config.getAgent(res.providerId);
-          const name = agent ? agent.name : res.providerId;
-          console.log(chalk.red(`\n  [${name}] ✗ ${t('error')}: ${res.error}`));
+        // Stop spinner to print council response clean
+        spinner.stop();
+
+        if (!res.error) {
+            const agent = config.getAgent(res.providerId);
+            const name = agent ? agent.name : res.providerId;
+            const model = agent ? agent.model : res.model;
+            
+            console.log(chalk.gray(`\n  ┌── [${name}] (${model})`));
+            
+            // Display reasoning for council members if available
+            if (res.reasoning) {
+                console.log(chalk.gray(`  │`));
+                console.log(chalk.gray(`  │  💭 ${t('reasoning') || 'Reasoning'}:`));
+                // Indent and dim the reasoning
+                res.reasoning.split('\n').forEach(line => {
+                    console.log(chalk.gray(`  │    ${chalk.italic(line)}`));
+                });
+            }
+
+            console.log(chalk.gray(`  │`));
+            console.log(chalk.gray(res.text.split('\n').map(l => `  │ ${l}`).join('\n')));
+            console.log(chalk.gray(`  └──────────────────────────────────────────`));
+        } else {
+            const agent = config.getAgent(res.providerId);
+            const name = agent ? agent.name : res.providerId;
+            console.log(chalk.red(`\n  [${name}] ✗ ${t('error')}: ${res.error}`));
+        }
+        
+        // Resume spinner
+        spinner.start(t('thinking'));
+    });
+
+    spinner.stop();
+
+    // Председатель
+    console.log(chalk.cyan(`\n  ${t('status_chair')}`));
+    if (result.chairResponse && !result.chairResponse.error) {
+      // Reasoning block for Chair
+      if (result.chairResponse.reasoning) {
+          console.log(chalk.gray(`\n  💭 ${chalk.bold('Reasoning')}:`));
+          console.log(chalk.gray(result.chairResponse.reasoning.split('\n').map(l => `  ${chalk.italic(l)}`).join('\n')));
+          console.log(chalk.gray('  ' + '─'.repeat(40))); // Separator line
+          console.log('');
       }
-  });
 
-  // Председатель
-  console.log(chalk.cyan(`\n  ${t('status_chair')}`));
-  if (result.chairResponse && !result.chairResponse.error) {
-    // Reasoning block for Chair
-    if (result.chairResponse.reasoning) {
-        console.log(chalk.gray(`\n  💭 ${chalk.bold('Reasoning')}:`));
-        console.log(chalk.gray(result.chairResponse.reasoning.split('\n').map(l => `  ${chalk.italic(l)}`).join('\n')));
-        console.log(chalk.gray('  ' + '─'.repeat(40))); // Separator line
-        console.log('');
+      console.log(result.chairResponse.text.split('\n').map(l => `  ${l}`).join('\n'));
+    } else if (result.chairResponse?.error) {
+      console.log(chalk.red(`  ✗ ${t('error')}: ${result.chairResponse.error}`));
     }
-
-    console.log(result.chairResponse.text.split('\n').map(l => `  ${l}`).join('\n'));
-  } else if (result.chairResponse?.error) {
-    console.log(chalk.red(`  ✗ ${t('error')}: ${result.chairResponse.error}`));
+  } catch (err: any) {
+      spinner.fail(t('error'));
+      throw err;
   }
 
   console.log('');
