@@ -120,6 +120,7 @@ export const I18N: Record<Language, Record<string, string>> = {
     'chair_output_res': 'РЕЗУЛЬТАТЫ ДЕЙСТВИЙ',
     'context': 'Контекст',
     'efficiency': 'Эффективность Совета',
+    'reasoning': 'Размышления',
     
     // Tools
     'tool_executing': 'Выполняю инструменты',
@@ -259,6 +260,7 @@ export const I18N: Record<Language, Record<string, string>> = {
     'chair_output_res': 'ACTION RESULTS',
     'context': 'Context',
     'efficiency': 'Council Efficiency',
+    'reasoning': 'Reasoning',
     
     // Tools
     'tool_executing': 'Executing tools',

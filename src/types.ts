@@ -48,5 +48,6 @@ export interface ProviderResponse {
   providerId: string;
   model: string;
   text: string;
+  reasoning?: string;
   error?: string;
 }

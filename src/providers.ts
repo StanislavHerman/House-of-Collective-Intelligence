@@ -319,11 +319,8 @@ async function sendOpenAICompatible(
           
           // Capture reasoning if available (DeepSeek R1 / OpenRouter)
           const reasoning = msgObj?.reasoning_content || msgObj?.reasoning;
-          if (reasoning) {
-              text = `<think>\n${reasoning}\n</think>\n\n${text}`;
-          }
           
-          return { providerId: agentId, model, text };
+          return { providerId: agentId, model, text, reasoning };
       } catch (err: any) {
           // Debug logging for OpenRouter/API errors
           if (err.response?.data) {
