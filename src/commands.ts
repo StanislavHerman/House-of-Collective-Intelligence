@@ -13,6 +13,7 @@ import { exec } from 'node:child_process';
 import util from 'node:util';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import Table from 'cli-table3';
 
 const execAsync = util.promisify(exec);
 
@@ -522,8 +523,26 @@ async function cmdStats(ctx: CommandContext) {
         return;
     }
 
-    // 1. Prepare data rows
-    const rows = agents.map(a => {
+    const table = new Table({
+        head: [
+            chalk.white(t('stats_col_agent')),
+            chalk.white(t('stats_col_model')),
+            chalk.white(t('stats_col_total')),
+            chalk.green(t('stats_col_accepted')),
+            chalk.yellow(t('stats_col_partial')),
+            chalk.red(t('stats_col_rejected')),
+            chalk.cyan(t('stats_col_eff'))
+        ],
+        chars: { 
+            'top': '' , 'top-mid': '' , 'top-left': '' , 'top-right': '',
+            'bottom': '' , 'bottom-mid': '' , 'bottom-left': '' , 'bottom-right': '',
+            'left': '' , 'left-mid': '' , 'mid': '' , 'mid-mid': '',
+            'right': '' , 'right-mid': '' , 'middle': '  ' 
+        },
+        style: { 'padding-left': 2, 'padding-right': 0, compact: true }
+    });
+
+    agents.forEach(a => {
         const stats = ctx.council.getStats(a.id);
         const total = stats.totalSuggestions;
         
@@ -542,63 +561,21 @@ async function cmdStats(ctx: CommandContext) {
         }
 
         const modelStr = `${a.providerType}/${a.model}`;
-
-        return {
-            name: a.name,
-            model: modelStr,
-            total: total.toString(),
-            accepted: stats.acceptedSuggestions.toString(),
-            partial: stats.partiallyAcceptedSuggestions.toString(),
-            rejected: stats.rejectedSuggestions.toString(),
-            eff: effStr,
-            effColor
-        };
-    });
-
-    // 2. Calculate dynamic column widths (Header vs Content)
-    const headers = {
-        name: t('stats_col_agent'),
-        model: t('stats_col_model'),
-        total: t('stats_col_total'),
-        accepted: t('stats_col_accepted'),
-        partial: t('stats_col_partial'),
-        rejected: t('stats_col_rejected'),
-        eff: t('stats_col_eff')
-    };
-
-    const wName = Math.max(headers.name.length, ...rows.map(r => r.name.length)) + 2;
-    const wModel = Math.max(headers.model.length, ...rows.map(r => r.model.length)) + 2;
-    const wTotal = Math.max(headers.total.length, ...rows.map(r => r.total.length)) + 2;
-    const wAcc = Math.max(headers.accepted.length, ...rows.map(r => r.accepted.length)) + 2;
-    const wPart = Math.max(headers.partial.length, ...rows.map(r => r.partial.length)) + 2;
-    const wRej = Math.max(headers.rejected.length, ...rows.map(r => r.rejected.length)) + 2;
-    const wEff = Math.max(headers.eff.length, ...rows.map(r => r.eff.length)) + 1;
-
-    // 3. Print Header
-    const headerStr = '  ' +
-        headers.name.padEnd(wName) +
-        headers.model.padEnd(wModel) +
-        headers.total.padEnd(wTotal) +
-        headers.accepted.padEnd(wAcc) +
-        headers.partial.padEnd(wPart) +
-        headers.rejected.padEnd(wRej) +
-        headers.eff.padEnd(wEff);
-
-    console.log(chalk.gray(headerStr));
-    console.log(chalk.gray('  ' + '-'.repeat(headerStr.length - 2)));
-
-    // 4. Print Rows
-    rows.forEach(r => {
-        const rowStr = '  ' +
-            r.name.padEnd(wName) +
-            chalk.gray(r.model.padEnd(wModel)) +
-            r.total.padEnd(wTotal) +
-            chalk.green(r.accepted.padEnd(wAcc)) +
-            chalk.yellow(r.partial.padEnd(wPart)) +
-            chalk.red(r.rejected.padEnd(wRej)) +
-            r.effColor(r.eff.padEnd(wEff));
         
-        console.log(rowStr);
+        // Truncate model string if too long to prevent wrapping
+        const displayModel = modelStr.length > 35 ? modelStr.substring(0, 32) + '...' : modelStr;
+
+        table.push([
+            a.name,
+            chalk.gray(displayModel),
+            total.toString(),
+            chalk.green(stats.acceptedSuggestions.toString()),
+            chalk.yellow(stats.partiallyAcceptedSuggestions.toString()),
+            chalk.red(stats.rejectedSuggestions.toString()),
+            effColor(effStr)
+        ]);
     });
+
+    console.log(table.toString());
     console.log('');
 }
