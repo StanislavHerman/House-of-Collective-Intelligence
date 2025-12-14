@@ -433,7 +433,7 @@ export async function testApiKey(type: string, apiKey: string): Promise<{ valid:
       await axios.post(
         `${baseUrl}/chat/completions`,
         {
-          model: 'llama-2-70b-chat',
+          model: 'llama-3.1-sonar-small-128k-online',
           messages: [{ role: 'user', content: 'hi' }],
           max_tokens: 1
         },
