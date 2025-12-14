@@ -473,10 +473,15 @@ export class Council {
     if (evalMatch) {
         try {
             const evalJson = JSON.parse(evalMatch[1]);
+            let updateCount = 0;
             for (const [agentId, result] of Object.entries(evalJson)) {
                 if (result === 'accepted' || result === 'partial' || result === 'rejected') {
                     this.updateAgentStats(agentId, result as any);
+                    updateCount++;
                 }
+            }
+            if (updateCount > 0 && onProgress) {
+                onProgress(t('agents_updated') + ` (Efficiency: ${updateCount})`);
             }
             // Удаляем блок оценки из текста ответа, чтобы не показывать пользователю
             finalChairResponse.text = finalChairResponse.text.replace(evalMatch[0], '').trim();
