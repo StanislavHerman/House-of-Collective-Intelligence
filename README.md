@@ -43,6 +43,7 @@ The Council is not just for chat. Agents can perform real actions on your comput
 #### 📋 Commands Menu (`/`)
 - **/login**: Setup API keys for different providers.
 - **/agents**: Create, delete, and manage AI agents (assign Chairman/Council).
+- **/council**: Toggle Council on/off (save costs).
 - **/settings**: Manage permissions for agent tools (browser, desktop control, file access, commands).
 - **/status**: Check current team composition and balance.
 - **/stats**: View efficiency statistics of your Council.
@@ -89,6 +90,7 @@ The Council is not just for chat. Agents can perform real actions on your comput
 #### 📋 Меню команд (`/`)
 - **/login**: Настройка API ключей.
 - **/agents**: Управление агентами (создание, удаление, назначение в Совет).
+- **/council**: Вкл/Выкл Совет (экономия токенов).
 - **/settings**: Настройки доступа агентов к инструментам (браузер, управление ПК, файлы, команды).
 - **/status**: Статус команды и баланс.
 - **/stats**: Статистика эффективности Совета.
