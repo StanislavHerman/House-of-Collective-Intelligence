@@ -78,11 +78,43 @@ export class ToolManager {
 
   async runCommand(cmd: string): Promise<ToolResult> {
     try {
-      const { stdout, stderr } = await execAsync(cmd, { cwd: this.cwd });
+      // Wrap command to persist directory changes
+      // We append ' && pwd' to capture the final CWD
+      const wrappedCmd = `${cmd} && echo "__CWD__" && pwd`;
+      
+      const { stdout, stderr } = await execAsync(wrappedCmd, { cwd: this.cwd, shell: '/bin/bash' });
+      
       let output = stdout;
+      let newCwd = this.cwd;
+      
+      // Parse output for CWD marker
+      if (output.includes('__CWD__')) {
+          const lines = output.split('\n');
+          const markerIndex = lines.lastIndexOf('__CWD__');
+          if (markerIndex !== -1 && markerIndex + 1 < lines.length) {
+              const possibleCwd = lines[markerIndex + 1].trim();
+              if (possibleCwd) {
+                  newCwd = possibleCwd;
+                  // Remove the marker and pwd output from displayed result
+                  // We remove everything from the marker onwards
+                  // But wait, what if there's trailing newlines?
+                  // Let's just slice the array
+                  output = lines.slice(0, markerIndex).join('\n');
+              }
+          }
+      }
+
+      this.cwd = newCwd;
+
       if (stderr) {
           output += (output ? '\n--- STDERR ---\n' : '') + stderr;
       }
+      
+      // Add CWD info to output so agent knows where it is
+      // But only if it changed or if it's a cd command?
+      // Better to just be transparent.
+      // output += `\n(CWD: ${this.cwd})`; 
+      
       return { output: output || '' }; 
     } catch (error: any) {
       return { output: error.stdout || '', error: error.message + (error.stderr ? '\nSTDERR: ' + error.stderr : '') };
