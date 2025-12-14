@@ -420,6 +420,17 @@ async function cmdStatus(ctx: CommandContext) {
     process.stdout.write('\r' + ' '.repeat(30) + '\r');
 
     console.log('');
+    
+    // Global Council Status
+    const isCouncilActive = ctx.config.getCouncilActive();
+    if (isCouncilActive) {
+        console.log(chalk.bold(t('status_council_global_on')));
+    } else {
+        console.log(chalk.bold(t('status_council_global_off')));
+    }
+    console.log(chalk.gray('  ' + '-'.repeat(40)));
+    console.log('');
+
     if (chair) {
         const bal = balances[chair.providerType] || '';
         const balStr = bal ? chalk.yellow(` [${bal}]`) : '';

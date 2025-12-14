@@ -47,6 +47,8 @@ export const I18N: Record<Language, Record<string, string>> = {
     'status_chair_none': 'не назначен. Используйте /agents для выбора.',
     'status_secretary': '📝 СЕКРЕТАРЬ',
     'status_secretary_none': 'нет',
+    'status_council_global_on': '🟢 РЕЖИМ СОВЕТА: ВКЛЮЧЕН',
+    'status_council_global_off': '🔴 РЕЖИМ СОВЕТА: ВЫКЛЮЧЕН (Только Председатель)',
     'status_council': '🤖 СОВЕТ',
     'status_council_none': 'нет',
     
@@ -207,6 +209,8 @@ export const I18N: Record<Language, Record<string, string>> = {
     'status_chair_none': 'not assigned. Use /agents to select.',
     'status_secretary': '📝 SECRETARY',
     'status_secretary_none': 'none',
+    'status_council_global_on': '🟢 COUNCIL MODE: ENABLED',
+    'status_council_global_off': '🔴 COUNCIL MODE: DISABLED (Chairman Only)',
     'status_council': '🤖 COUNCIL',
     'status_council_none': 'none',
     
