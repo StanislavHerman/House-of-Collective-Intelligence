@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // House of Collective Intelligence — CLI
 import chalk from 'chalk';
+import ora from 'ora';
 import { ConfigManager } from './config.js';
 import { HistoryManager } from './history.js';
 import { Council } from './council.js';
