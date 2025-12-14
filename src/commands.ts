@@ -558,40 +558,18 @@ async function cmdToggleCouncil(ctx: CommandContext) {
 }
 
 async function cmdPaste(ctx: CommandContext): Promise<string | boolean> {
-    const tmpFile = path.join(os.tmpdir(), `council_paste_${Date.now()}.txt`);
+    console.log(chalk.gray(`\n  📝 ${t('paste_editor_opening')}`));
     
-    // Create empty file
-    fs.writeFileSync(tmpFile, '');
+    // Use new inline multiline reader
+    const content = await ui.readMultiline(chalk.cyan('Paste Mode (Inline)'));
     
-    const editor = process.env.EDITOR || (process.platform === 'win32' ? 'notepad' : 'nano');
-    
-    console.log(chalk.gray(`\n  📝 ${t('paste_editor_opening')} (${editor})...`));
-    console.log(chalk.gray(`  ${t('paste_editor_hint')}`));
-    
-    // Pause stdin so child process can use it
-    if (process.stdin.isTTY) process.stdin.pause();
-
-    try {
-        await execAsync(`${editor} "${tmpFile}"`);
-        
-        if (fs.existsSync(tmpFile)) {
-            const content = fs.readFileSync(tmpFile, 'utf8').trim();
-            fs.unlinkSync(tmpFile);
-            
-            if (content) {
-                console.log(chalk.green(`  ✓ ${t('paste_loaded')} (${content.length} chars)\n`));
-                return content; // Return content to be processed as a question
-            } else {
-                console.log(chalk.yellow(`  ⚠️ ${t('paste_empty')}\n`));
-            }
-        }
-    } catch (e: any) {
-        console.error(chalk.red(`  ✗ ${t('error')}: ${e.message}`));
-    } finally {
-        if (process.stdin.isTTY) process.stdin.resume();
+    if (content) {
+        console.log(chalk.green(`  ✓ ${t('paste_loaded')} (${content.length} chars)\n`));
+        return content;
+    } else {
+        console.log(chalk.yellow(`  ⚠️ ${t('paste_empty')}\n`));
+        return false;
     }
-    
-    return false;
 }
 
 async function cmdCompact(ctx: CommandContext) {

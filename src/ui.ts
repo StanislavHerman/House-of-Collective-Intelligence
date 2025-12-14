@@ -284,6 +284,69 @@ export function waitForCancel(signal: AbortSignal, onCancel: () => void): () => 
     };
 }
 
+// Capture multiline input until EOF (Ctrl+D)
+export async function readMultiline(prompt: string): Promise<string | null> {
+    if (rl) rl.pause();
+
+    console.log(prompt);
+    console.log(chalk.gray('  (Type or Paste text. Press Ctrl+D to send, Ctrl+C to cancel)'));
+    process.stdout.write(chalk.cyan('  > '));
+
+    return runRawMode(async (stdin, stdout) => {
+        let buffer = '';
+        
+        return new Promise<string | null>(resolve => {
+            const onData = (data: Buffer) => {
+                const str = data.toString();
+                
+                // Ctrl+C
+                if (str.includes('\u0003')) {
+                    stdout.write('\n' + chalk.red('Cancelled') + '\n');
+                    resolve(null);
+                    return;
+                }
+
+                // Ctrl+D (EOF)
+                if (str.includes('\u0004')) {
+                    stdout.write('\n');
+                    resolve(buffer.trim());
+                    return;
+                }
+
+                // Handle Backspace (Basic)
+                if (str === '\u007f' || str === '\b') {
+                    if (buffer.length > 0) {
+                        buffer = buffer.slice(0, -1);
+                        // Erase char from screen
+                        stdout.write('\b \b');
+                    }
+                    return;
+                }
+
+                // Normal input
+                buffer += str;
+                stdout.write(str);
+            };
+
+            stdin.on('data', onData);
+            
+            // Cleanup listener is handled by runRawMode's finally, 
+            // but runRawMode waits for the promise to resolve.
+            // We need to detach THIS listener manually? 
+            // runRawMode doesn't know about our specific 'data' listener.
+            // Actually runRawMode wrapper doesn't remove listeners attached inside fn.
+            // We should remove it before resolving.
+            const originalResolve = resolve;
+            resolve = (val) => {
+                stdin.removeListener('data', onData);
+                originalResolve(val);
+            };
+        });
+    }).finally(() => {
+        if (rl) rl.resume();
+    });
+}
+
 export async function password(prompt: string): Promise<string> {
     if (!rl) initReadline();
     // Use simplified masked input or the old one wrapped in runRawMode
