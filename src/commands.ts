@@ -43,6 +43,7 @@ export const COMMANDS = [
   { cmd: '/lang', desc: 'cmd_lang' },
   { cmd: '/new', desc: 'cmd_new' },
   { cmd: '/paste', desc: 'cmd_paste' },
+  { cmd: '/verify', desc: 'cmd_verify' },
   { cmd: '/exit', desc: 'cmd_exit' },
 ];
 
@@ -62,6 +63,10 @@ export async function handleCommand(input: string, ctx: CommandContext): Promise
     case '/paste':
     case '/edit':
       return await cmdPaste(ctx);
+
+    case '/verify':
+      await cmdVerify(ctx);
+      return false;
     
     case '/agents':
     case '/chair':
@@ -571,6 +576,30 @@ async function cmdPaste(ctx: CommandContext): Promise<string | boolean> {
     } else {
         console.log(chalk.yellow(`  ⚠️ ${t('paste_empty')}\n`));
         return false;
+    }
+}
+
+async function cmdVerify(ctx: CommandContext) {
+    const current = ctx.config.getVerificationCommand();
+    
+    console.log(chalk.cyan(`\n  ${t('verify_title')}`));
+    if (current) {
+        console.log(`  ${t('verify_current')}: ${chalk.green(current)}`);
+    } else {
+        console.log(`  ${t('verify_none')}`);
+    }
+    console.log(chalk.gray(`  ${t('verify_help')}\n`));
+
+    const input = await ui.input(t('verify_prompt'), current);
+    
+    if (input) {
+        if (input.trim() === 'DELETE') {
+            ctx.config.setVerificationCommand(undefined);
+            console.log(chalk.yellow(`  ${t('verify_deleted')}\n`));
+        } else {
+            ctx.config.setVerificationCommand(input.trim());
+            console.log(chalk.green(`  ✓ ${t('verify_saved')}: ${input.trim()}\n`));
+        }
     }
 }
 

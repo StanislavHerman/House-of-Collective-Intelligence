@@ -266,4 +266,13 @@ export class ConfigManager {
       this.config.secretaryAgentId = id;
       this.save();
   }
+
+  getVerificationCommand(): string | undefined {
+      return this.config.verificationCommand;
+  }
+
+  setVerificationCommand(cmd: string | undefined) {
+      this.config.verificationCommand = cmd;
+      this.save();
+  }
 }

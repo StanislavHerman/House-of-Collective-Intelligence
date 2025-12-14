@@ -436,6 +436,15 @@ export class Council {
             } else if (tool.type === 'file') {
                 const res = await this.tools.writeFile(tool.arg, tool.content);
                 toolOutputMsg += `Write File: ${tool.arg}\nResult: ${res.output} ${res.error || ''}\n\n`;
+                
+                // Auto-Verify
+                const verifyCmd = this.config.getVerificationCommand();
+                if (verifyCmd && !res.error) {
+                    if (onProgress) onProgress(`${t('verify_running')} (${verifyCmd})...`);
+                    const vRes = await this.tools.runCommand(verifyCmd);
+                    const status = vRes.error ? t('verify_fail') : t('verify_success');
+                    toolOutputMsg += `[Auto-Verify]: ${status}\nCmd: ${verifyCmd}\nOutput:\n${vRes.output}\nError: ${vRes.error || ''}\n\n`;
+                }
             } else if (tool.type === 'edit') {
                 // Parse SEARCH/REPLACE block
                 const parts = tool.content.split('=======');
@@ -444,6 +453,15 @@ export class Council {
                     const replaceBlock = parts[1].replace('>>>>>>>', '').trim();
                     const res = await this.tools.editFile(tool.arg, searchBlock, replaceBlock);
                     toolOutputMsg += `Edit File: ${tool.arg}\nResult: ${res.output} ${res.error || ''}\n\n`;
+                    
+                    // Auto-Verify
+                    const verifyCmd = this.config.getVerificationCommand();
+                    if (verifyCmd && !res.error) {
+                        if (onProgress) onProgress(`${t('verify_running')} (${verifyCmd})...`);
+                        const vRes = await this.tools.runCommand(verifyCmd);
+                        const status = vRes.error ? t('verify_fail') : t('verify_success');
+                        toolOutputMsg += `[Auto-Verify]: ${status}\nCmd: ${verifyCmd}\nOutput:\n${vRes.output}\nError: ${vRes.error || ''}\n\n`;
+                    }
                 } else {
                     toolOutputMsg += `Edit File: ${tool.arg}\nError: Invalid format. Must contain <<<<<<< SEARCH, =======, and >>>>>>> blocks.\n\n`;
                 }

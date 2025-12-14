@@ -37,6 +37,7 @@ export interface AppConfig {
   autoCompactLimit?: number; // Лимит сообщений для автосжатия (по умолчанию 20)
   language?: 'ru' | 'en'; // Язык интерфейса
   permissions?: AppPermissions; // Права доступа инструментов
+  verificationCommand?: string; // Команда для самопроверки (например, npm test)
 }
 
 export interface Message {
