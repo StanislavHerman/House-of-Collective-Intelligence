@@ -25,6 +25,10 @@ async function main() {
   const config = new ConfigManager();
   const history = new HistoryManager();
   const council = new Council(config, history);
+  
+  // Reset stats on startup (new session)
+  council.resetStats();
+  
   const ctx = { config, history, council };
 
   // Set language
