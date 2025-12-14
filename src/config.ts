@@ -35,6 +35,7 @@ export class ConfigManager {
                   allow_desktop: true,
                   allow_file_read: true,
                   allow_file_write: true,
+                  allow_file_edit: true,
                   allow_command: true
               };
           }
@@ -52,6 +53,7 @@ export class ConfigManager {
                   allow_desktop: true,
                   allow_file_read: true,
                   allow_file_write: true,
+                  allow_file_edit: true,
                   allow_command: true
               }
           };
@@ -69,6 +71,7 @@ export class ConfigManager {
               allow_desktop: true,
               allow_file_read: true,
               allow_file_write: true,
+              allow_file_edit: true,
               allow_command: true
           }
       };

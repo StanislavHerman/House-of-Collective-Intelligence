@@ -22,6 +22,7 @@ export interface AppPermissions {
   allow_desktop?: boolean;
   allow_file_read?: boolean;
   allow_file_write?: boolean;
+  allow_file_edit?: boolean;
   allow_command?: boolean;
 }
 

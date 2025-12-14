@@ -24,19 +24,32 @@ export const TOOLS_DEF = `
      \`\`\`
 
 2. write_file
-   - Описание: Создать или перезаписать файл.
-   - ВАЖНО: Ты должен использовать этот блок, чтобы файл реально создался. Если ты просто напишешь код в чат, он НЕ сохранится.
+   - Описание: Создать или ПОЛНОСТЬЮ ПЕРЕЗАПИСАТЬ файл. Используй только для новых или маленьких файлов.
+   - ВАЖНО: Ты должен использовать этот блок, чтобы файл реально создался.
    - Формат вызова:
      \`\`\`file:<путь/к/файлу>
      <содержимое>
      \`\`\`
 
-3. read_file
-   - Описание: Прочитать содержимое файла.
+3. edit_file (РЕКОМЕНДУЕТСЯ)
+   - Описание: Заменить кусок текста в файле. Безопаснее, чем write_file.
+   - Формат вызова:
+     \`\`\`edit:<путь/к/файлу>
+     <<<<<<< SEARCH
+     старый код (копируй точно, с пробелами!)
+     =======
+     новый код
+     >>>>>>>
+     \`\`\`
+
+4. read_file
+   - Описание: Прочитать файл. Можно указать строки.
    - Формат вызова:
      \`\`\`read:<путь/к/файлу>\`\`\`
+     ИЛИ
+     \`\`\`read:<путь/к/файлу>:<строка_нач>-<строка_кон>\`\`\`
 
-4. browser_open
+5. browser_open
    - Описание: Открыть сайт в браузере и получить его текстовое содержимое.
    - Формат вызова:
      \`\`\`browser:open <url>\`\`\`
@@ -166,10 +179,51 @@ export class ToolManager {
     }
   }
 
-  async readFile(filePath: string): Promise<ToolResult> {
+  async editFile(filePath: string, search: string, replace: string): Promise<ToolResult> {
+      try {
+          const target = this.resolvePath(filePath);
+          if (!await fs.access(target).then(() => true).catch(() => false)) {
+              return { output: '', error: `File not found: ${filePath}` };
+          }
+
+          const content = await fs.readFile(target, 'utf8');
+          
+          // Normalize line endings for search
+          // This is tricky. Let's try exact match first.
+          if (content.includes(search)) {
+              const newContent = content.replace(search, replace);
+              await fs.writeFile(target, newContent);
+              return { output: `Successfully edited ${filePath}` };
+          } else {
+              return { output: '', error: `Search string not found in ${filePath}. Make sure to match whitespace exactly.` };
+          }
+      } catch (error: any) {
+          return { output: '', error: `Edit failed: ${error.message}` };
+      }
+  }
+
+  async readFile(filePath: string, startLine?: number, endLine?: number): Promise<ToolResult> {
     try {
       const target = this.resolvePath(filePath);
+      const stats = await fs.stat(target);
+      
+      // Limit size to 100KB to prevent context explosion
+      if (stats.size > 100 * 1024 && !startLine) {
+          return { 
+              output: '', 
+              error: `File is too large (${Math.round(stats.size/1024)}KB). Please read specific lines using 'read:path:start-end' format (e.g. read:file.txt:1-50).` 
+          };
+      }
+
       const content = await fs.readFile(target, 'utf8');
+      
+      if (startLine && endLine) {
+          const lines = content.split('\n');
+          // 1-based indexing for user convenience
+          const slice = lines.slice(startLine - 1, endLine).join('\n');
+          return { output: slice };
+      }
+
       return { output: content };
     } catch (error: any) {
       return { output: '', error: error.message };

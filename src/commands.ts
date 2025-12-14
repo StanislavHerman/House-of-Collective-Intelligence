@@ -168,6 +168,7 @@ async function cmdSettings(ctx: CommandContext) {
             { label: getLabel('perm_command', !!perms.allow_command), value: 'command' },
             { label: getLabel('perm_file_read', !!perms.allow_file_read), value: 'read' },
             { label: getLabel('perm_file_write', !!perms.allow_file_write), value: 'write' },
+            { label: getLabel('perm_file_edit', !!perms.allow_file_edit), value: 'edit' },
             { label: t('settings_back'), value: 'back' }
         ]);
 
@@ -178,6 +179,7 @@ async function cmdSettings(ctx: CommandContext) {
         if (choice === 'command') perms.allow_command = !perms.allow_command;
         if (choice === 'read') perms.allow_file_read = !perms.allow_file_read;
         if (choice === 'write') perms.allow_file_write = !perms.allow_file_write;
+        if (choice === 'edit') perms.allow_file_edit = !perms.allow_file_edit;
 
         ctx.config.setPermissions(perms);
     }

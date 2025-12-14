@@ -425,6 +425,10 @@ export class Council {
                 toolOutputMsg += `${tool.type}: ${tool.content}\nError: Permission denied. User has disabled desktop control in /settings.\n\n`;
                 continue;
             }
+            if (tool.type === 'edit' && !perms.allow_file_edit) {
+                toolOutputMsg += `Edit File: ${tool.arg}\nError: Permission denied. User has disabled file editing in /settings.\n\n`;
+                continue;
+            }
 
             if (tool.type === 'command') {
                 const res = await this.tools.runCommand(tool.content);
@@ -432,8 +436,30 @@ export class Council {
             } else if (tool.type === 'file') {
                 const res = await this.tools.writeFile(tool.arg, tool.content);
                 toolOutputMsg += `Write File: ${tool.arg}\nResult: ${res.output} ${res.error || ''}\n\n`;
+            } else if (tool.type === 'edit') {
+                // Parse SEARCH/REPLACE block
+                const parts = tool.content.split('=======');
+                if (parts.length === 2) {
+                    const searchBlock = parts[0].replace('<<<<<<< SEARCH', '').trim();
+                    const replaceBlock = parts[1].replace('>>>>>>>', '').trim();
+                    const res = await this.tools.editFile(tool.arg, searchBlock, replaceBlock);
+                    toolOutputMsg += `Edit File: ${tool.arg}\nResult: ${res.output} ${res.error || ''}\n\n`;
+                } else {
+                    toolOutputMsg += `Edit File: ${tool.arg}\nError: Invalid format. Must contain <<<<<<< SEARCH, =======, and >>>>>>> blocks.\n\n`;
+                }
             } else if (tool.type === 'read') {
-                const res = await this.tools.readFile(tool.content);
+                // Parse optional line range: path:start-end
+                const match = tool.content.match(/^(.*?):(\d+)-(\d+)$/);
+                let res;
+                if (match) {
+                    const path = match[1];
+                    const start = parseInt(match[2]);
+                    const end = parseInt(match[3]);
+                    res = await this.tools.readFile(path, start, end);
+                } else {
+                    res = await this.tools.readFile(tool.content);
+                }
+                
                 toolOutputMsg += `Read File: ${tool.content}\nContent:\n${res.output}\nError: ${res.error || ''}\n\n`;
             } else if (tool.type === 'browser_open') {
                 const res = await this.tools.browserOpen(tool.content);
@@ -593,7 +619,7 @@ export class Council {
       }
   }
 
-  private parseTools(text: string): { type: 'command' | 'file' | 'read' | 'browser_open' | 'browser_search' | 'browser_act' | 'desktop_screenshot' | 'desktop_act', content: string, arg: string }[] {
+  private parseTools(text: string): { type: 'command' | 'file' | 'edit' | 'read' | 'browser_open' | 'browser_search' | 'browser_act' | 'desktop_screenshot' | 'desktop_act', content: string, arg: string }[] {
     const results: any[] = [];
     
     // Regex для bash
@@ -603,6 +629,14 @@ export class Council {
       results.push({ type: 'command', content: match[1].trim(), arg: '' });
     }
     
+    // Regex для edit:path (SEARCH/REPLACE block)
+    // Matches: ```edit:path \n <<<<<<< SEARCH \n ... \n ======= \n ... \n >>>>>>> \n ```
+    // We use a looser regex to capture the block and then validate structure later
+    const editRegex = /```edit:\s*(.*?)\s*([\s\S]*?)\s*```/g;
+    while ((match = editRegex.exec(text)) !== null) {
+        results.push({ type: 'edit', arg: match[1].trim(), content: match[2].trim() });
+    }
+
     // Regex для file:path
     // Allow more flexible spacing: file: path or file : path
     const fileRegex = /```file:\s*(.*?)\s*([\s\S]*?)\s*```/g;
