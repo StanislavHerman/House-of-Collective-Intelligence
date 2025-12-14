@@ -501,7 +501,9 @@ export class Council {
 
     // Запуск Секретаря для оценки эффективности (если есть Секретарь, был Совет и режим Совета активен)
     if (isCouncilActive && currentSecretaryId && councilResponses.length > 0) {
-        await this.evaluateEfficiency(currentSecretaryId, question, councilResponses, finalChairResponse.text, onProgress);
+        // Run in background (Fire and Forget) to not block user response
+        this.evaluateEfficiency(currentSecretaryId, question, councilResponses, finalChairResponse.text, onProgress)
+            .catch(err => console.error(`[Background] Secretary error: ${err.message}`));
     }
 
     return { councilResponses, chairResponse: finalChairResponse };
