@@ -35,7 +35,7 @@ const DEFAULT_MODELS: Record<string, string> = {
   deepseek: 'deepseek-chat',
   grok: 'grok-2-1212',
   gemini: 'gemini-2.0-flash',
-  perplexity: 'llama-3.1-sonar-small-128k-online',
+  perplexity: 'sonar',
   openrouter: 'google/gemini-2.0-flash-001',
 };
 
@@ -433,7 +433,7 @@ export async function testApiKey(type: string, apiKey: string): Promise<{ valid:
       await axios.post(
         `${baseUrl}/chat/completions`,
         {
-          model: 'llama-3.1-sonar-small-128k-online',
+          model: 'sonar',
           messages: [{ role: 'user', content: 'hi' }],
           max_tokens: 1
         },
