@@ -18,11 +18,35 @@ export interface AskResult {
 export class Council {
   private tools = new ToolManager();
   private stats: Record<string, AgentStats> = {};
+  private statsFile = path.join(os.homedir(), '.council-ai', 'stats.json');
 
   constructor(
     private config: ConfigManager,
     private history: HistoryManager
-  ) {}
+  ) {
+      this.loadStats();
+  }
+
+  private loadStats() {
+      try {
+          if (fs.existsSync(this.statsFile)) {
+              const data = fs.readFileSync(this.statsFile, 'utf8');
+              this.stats = JSON.parse(data);
+          }
+      } catch (e) {
+          // ignore
+      }
+  }
+
+  private saveStats() {
+      try {
+          const dir = path.dirname(this.statsFile);
+          if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+          fs.writeFileSync(this.statsFile, JSON.stringify(this.stats, null, 2));
+      } catch (e) {
+          // ignore
+      }
+  }
 
   async cleanup() {
       await this.tools.close();
@@ -30,6 +54,7 @@ export class Council {
 
   resetStats() {
       this.stats = {};
+      this.saveStats();
   }
 
   getStats(agentId: string): AgentStats {
@@ -50,6 +75,7 @@ export class Council {
       if (result === 'accepted') s.acceptedSuggestions++;
       if (result === 'partial') s.partiallyAcceptedSuggestions++;
       if (result === 'rejected') s.rejectedSuggestions++;
+      this.saveStats();
   }
 
   getGlobalEfficiency(): number {
