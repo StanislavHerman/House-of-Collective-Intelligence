@@ -285,7 +285,15 @@ async function sendOpenAICompatible(
               signal
             }
           );
-          const text = res.data?.choices?.[0]?.message?.content || '';
+          const msgObj = res.data?.choices?.[0]?.message;
+          let text = msgObj?.content || '';
+          
+          // Capture reasoning if available (DeepSeek R1 / OpenRouter)
+          const reasoning = msgObj?.reasoning_content || msgObj?.reasoning;
+          if (reasoning) {
+              text = `<think>\n${reasoning}\n</think>\n\n${text}`;
+          }
+          
           return { providerId: agentId, model, text };
       } catch (err: any) {
           // Debug logging for OpenRouter/API errors
@@ -583,7 +591,7 @@ export async function transcribeAudio(apiKey: string, filePath: string): Promise
         Authorization: `Bearer ${apiKey}`,
         ...formData.getHeaders()
       },
-      timeout: 60000
+      timeout: 120000
     });
 
     return res.data?.text || '';
