@@ -3,6 +3,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import util from 'node:util';
 import { BrowserManager } from './browser.js';
+import os from 'node:os';
 
 const execAsync = util.promisify(exec);
 
@@ -77,6 +78,14 @@ export class ToolManager {
       await this.browser.close();
   }
 
+  // Helper to resolve paths with ~ support
+  private resolvePath(filePath: string): string {
+      if (filePath.startsWith('~/')) {
+          return path.join(os.homedir(), filePath.slice(2));
+      }
+      return path.resolve(this.cwd, filePath);
+  }
+
   async runCommand(cmd: string): Promise<ToolResult> {
     try {
       // Wrap command to persist directory changes
@@ -130,7 +139,18 @@ export class ToolManager {
 
   async writeFile(filePath: string, content: string): Promise<ToolResult> {
     try {
-      const target = path.resolve(this.cwd, filePath);
+      const target = this.resolvePath(filePath);
+      
+      // Check if target exists and is a directory
+      try {
+          const stat = await fs.stat(target);
+          if (stat.isDirectory()) {
+              return { output: '', error: `Error: The path '${filePath}' is a directory, not a file. Please specify a filename (e.g. ${filePath}/filename.ext).` };
+          }
+      } catch (e) {
+          // File does not exist, which is good
+      }
+
       await fs.mkdir(path.dirname(target), { recursive: true });
       await fs.writeFile(target, content);
       return { output: `File saved to ${filePath}` };
@@ -141,7 +161,7 @@ export class ToolManager {
 
   async readFile(filePath: string): Promise<ToolResult> {
     try {
-      const target = path.resolve(this.cwd, filePath);
+      const target = this.resolvePath(filePath);
       const content = await fs.readFile(target, 'utf8');
       return { output: content };
     } catch (error: any) {
@@ -188,7 +208,8 @@ export class ToolManager {
           
           if (cmd === 'screenshot') {
               const p = parts[1];
-              const res = await this.browser.screenshot(p);
+              const target = this.resolvePath(p); // Resolve screenshot path too
+              const res = await this.browser.screenshot(target);
               return { output: res };
           }
           
@@ -200,7 +221,7 @@ export class ToolManager {
 
   async desktopScreenshot(filePath: string): Promise<ToolResult> {
       try {
-          const target = path.resolve(this.cwd, filePath);
+          const target = this.resolvePath(filePath);
           await fs.mkdir(path.dirname(target), { recursive: true });
 
           if (process.platform === 'darwin') {
