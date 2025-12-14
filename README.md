@@ -1,5 +1,7 @@
 # 🏛 House of Collective Intelligence
 
+![macOS](https://img.shields.io/badge/macOS-000000?style=for-the-badge&logo=apple&logoColor=white) ![Windows](https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white)
+
 **AI Council in your Terminal**  
 **Совет ИИ в твоем терминале**
 
@@ -11,6 +13,7 @@
 
 #### ✨ Key Features
 - **Multi-Model Support**: Use OpenAI, Anthropic, DeepSeek, xAI (Grok), Google Gemini, Perplexity, and OpenRouter.
+- **Cross-Platform**: Works natively on **macOS** and **Windows** (no WSL required).
 - **Role-Playing**: Assign roles (Chairman, Council Member) to different models.
 - **Secretary Role**: Assign a dedicated "Secretary" agent to automatically evaluate Council efficiency (Actor-Critic pattern), ensuring precise stats without burdening the Chairman.
 - **Smart Memory**: Auto-compacting context to save tokens while keeping the conversation going.
@@ -19,10 +22,10 @@
 
 #### 🤖 Agentic Capabilities
 The Council is not just for chat. Agents can perform real actions on your computer (if you allow them):
-- 🖥️ **Desktop Control**: Take screenshots and simulate keyboard input (macOS).
+- 🖥️ **Desktop Control**: Take screenshots and simulate keyboard input (works on **macOS** & **Windows**).
 - 🌐 **Web Browsing**: Search the web, open pages, and interact with websites.
 - 📁 **File System**: Read and write files in your current directory.
-- 💻 **Terminal**: Execute shell commands.
+- 💻 **Terminal**: Execute shell commands (Bash on macOS/Linux, PowerShell on Windows).
 
 *You can enable/disable these permissions anytime using the `/settings` command.*
 
