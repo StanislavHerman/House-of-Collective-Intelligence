@@ -280,8 +280,8 @@ export class Council {
               
               if (onProgress) onProgress(`${agent.name} (${agent.model}): ${t('thinking')}`);
               
-              // Pass history without the last message (which is the current question), because 'question' is passed separately
-              const historyWithoutCurrent = this.history.getMessages().slice(0, -1);
+              // Pass CLEANED history without the last message to prevent pattern matching
+              const historyWithoutCurrent = this.getCleanHistory().slice(0, -1);
               const response = await sendToProvider(agent, apiKey || '', question, historyWithoutCurrent, identityPrompt, signal);
               
               if (onProgress) onProgress(`${agent.name} (${agent.model}): ${t('answer_received')}`);
@@ -343,19 +343,9 @@ export class Council {
         // If turn > 0, the last message is Tool Output. 
         // The 'currentPrompt' is "Continue". 
         // We MUST send the Tool Output, so we do NOT slice.
-        let historyForRequest = this.history.getMessages();
+        // Use CLEANED history to prevent pattern matching of "Efficiency" blocks
+        let historyForRequest = this.getCleanHistory();
         
-        // CLEANUP: Remove "Efficiency" blocks from history to prevent pattern matching
-        historyForRequest = historyForRequest.map(msg => {
-            if (msg.role === 'assistant') {
-                return {
-                    ...msg,
-                    text: msg.text.replace(/(\n\s*)?📊 ЭФФЕКТИВНОСТЬ СОВЕТА[\s\S]*$/, '').replace(/(\n\s*)?COUNCIL EFFICIENCY[\s\S]*$/, '')
-                };
-            }
-            return msg;
-        });
-
         if (turn === 0) {
             historyForRequest = historyForRequest.slice(0, -1);
         }
@@ -512,6 +502,22 @@ export class Council {
     }
 
     return { councilResponses, chairResponse: finalChairResponse };
+  }
+
+  private getCleanHistory() {
+      return this.history.getMessages().map(msg => {
+          if (msg.role === 'assistant') {
+              let text = msg.text;
+              // Remove explicit blocks
+              text = text.replace(/(\n\s*)?📊 ЭФФЕКТИВНОСТЬ СОВЕТА[\s\S]*$/, '');
+              text = text.replace(/(\n\s*)?COUNCIL EFFICIENCY[\s\S]*$/, '');
+              text = text.replace(/(\n\s*)?📊 COUNCIL EFFICIENCY[\s\S]*$/, '');
+              text = text.replace(/(\n\s*)?📊 EVALUATION[\s\S]*$/, '');
+              
+              return { ...msg, text };
+          }
+          return msg;
+      });
   }
 
   private async evaluateEfficiency(
