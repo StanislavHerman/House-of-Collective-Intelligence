@@ -273,12 +273,21 @@ async function sendOpenAICompatible(
 
   const tryChat = async () => {
       try {
-          const res = await axios.post(
-            `${baseUrl}/chat/completions`,
-            {
+          const payload: any = {
               model,
               messages: formattedMessages,
-            },
+          };
+
+          // Handle max_tokens vs max_completion_tokens
+          if (model.includes('o1-') || model.includes('o3-')) {
+               payload.max_completion_tokens = 32768; // o1 supports large outputs
+          } else {
+               payload.max_tokens = 16384; // Safe default for most modern models
+          }
+
+          const res = await axios.post(
+            `${baseUrl}/chat/completions`,
+            payload,
             {
               headers,
               timeout: getTimeoutForModel(model),
