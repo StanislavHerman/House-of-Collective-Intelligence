@@ -596,7 +596,8 @@ export class Council {
     }
     
     // Regex для file:path
-    const fileRegex = /```file:(.*?)\s*([\s\S]*?)\s*```/g;
+    // Allow more flexible spacing: file: path or file : path
+    const fileRegex = /```file:\s*(.*?)\s*([\s\S]*?)\s*```/g;
     while ((match = fileRegex.exec(text)) !== null) {
       results.push({ type: 'file', arg: match[1].trim(), content: match[2].trim() });
     }
