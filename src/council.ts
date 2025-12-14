@@ -344,9 +344,26 @@ export class Council {
         const currentImages: string[] = []; // Collect images from this turn
         const perms = this.config.getPermissions();
         
-        if (onProgress) onProgress(`Выполняю инструменты (${toolsToRun.length})...`);
+        if (onProgress) onProgress(`${t('tool_executing')} (${toolsToRun.length})...`);
         
         for (const tool of toolsToRun) {
+            // Log specific tool action
+            if (onProgress) {
+                let toolName = '';
+                let toolArg = tool.content;
+                if (tool.type === 'command') toolName = t('tool_bash');
+                if (tool.type === 'file') { toolName = t('tool_file_write'); toolArg = tool.arg; }
+                if (tool.type === 'read') toolName = t('tool_file_read');
+                if (tool.type === 'browser_open') toolName = t('tool_browser_open');
+                if (tool.type === 'browser_search') toolName = t('tool_browser_search');
+                if (tool.type === 'browser_act') toolName = t('tool_browser_act');
+                if (tool.type === 'desktop_screenshot') toolName = t('tool_desktop_screenshot');
+                if (tool.type === 'desktop_act') toolName = t('tool_desktop_act');
+
+                const displayArg = toolArg.length > 50 ? toolArg.substring(0, 47) + '...' : toolArg;
+                onProgress(`${toolName}: ${displayArg}`);
+            }
+
             // Check Permissions
             if (tool.type === 'command' && !perms.allow_command) {
                 toolOutputMsg += `Command: ${tool.content}\nError: Permission denied. User has disabled terminal commands in /settings.\n\n`;
