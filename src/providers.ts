@@ -173,40 +173,60 @@ export async function sendToProvider(
   // We need to cast the return type of prepareMessages as we changed implementation above
   const messages = prepareMessages(history, prompt, systemPrompt, model) as any[];
 
-  try {
-    if (type === 'anthropic') {
-      return await sendAnthropic(apiKey, messages, model, systemPrompt, agent.id, signal);
-    } else if (type === 'gemini') {
-      return await sendGemini(apiKey, messages, model, systemPrompt, agent.id, signal);
-    } else {
-      // openai, deepseek, grok, perplexity, openrouter
-      return await sendOpenAICompatible(type, apiKey, messages, model, systemPrompt, agent.id, signal);
+  let attempts = 0;
+  const maxAttempts = 2; // Try once, then retry once
+
+  while (attempts < maxAttempts) {
+    attempts++;
+    try {
+      if (type === 'anthropic') {
+        return await sendAnthropic(apiKey, messages, model, systemPrompt, agent.id, signal);
+      } else if (type === 'gemini') {
+        return await sendGemini(apiKey, messages, model, systemPrompt, agent.id, signal);
+      } else {
+        // openai, deepseek, grok, perplexity, openrouter
+        return await sendOpenAICompatible(type, apiKey, messages, model, systemPrompt, agent.id, signal);
+      }
+    } catch (error: any) {
+      if (axios.isCancel(error) || signal?.aborted) {
+         throw new Error('Aborted');
+      }
+
+      // Check for retryable errors (5xx, timeout)
+      const isRetryable = 
+          error.code === 'ECONNABORTED' || 
+          error.message?.toLowerCase().includes('timeout') ||
+          (error.response && error.response.status >= 500);
+
+      if (isRetryable && attempts < maxAttempts) {
+          // Log retry (optional, maybe debug only, or console.log/error)
+          // console.error(`[Provider] Retry ${attempts}/${maxAttempts} for ${model} due to: ${error.message}`);
+          await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2s
+          continue;
+      }
+      
+      let msg = error?.message || 'Unknown error';
+      
+      if (error?.response?.data) {
+          const data = error.response.data;
+          if (typeof data === 'string') {
+              msg = data;
+          } else if (data.error) {
+              if (typeof data.error === 'string') msg = data.error;
+              else if (data.error.message) msg = data.error.message;
+              else msg = JSON.stringify(data.error);
+          } else if (data.message) {
+              msg = data.message;
+          } else {
+              // Try to be helpful if unknown structure
+              msg = JSON.stringify(data).slice(0, 200);
+          }
+      }
+      
+      return { providerId: agent.id, model, text: '', error: msg };
     }
-  } catch (error: any) {
-    if (axios.isCancel(error) || signal?.aborted) {
-       throw new Error('Aborted');
-    }
-    
-    let msg = error?.message || 'Unknown error';
-    
-    if (error?.response?.data) {
-        const data = error.response.data;
-        if (typeof data === 'string') {
-            msg = data;
-        } else if (data.error) {
-            if (typeof data.error === 'string') msg = data.error;
-            else if (data.error.message) msg = data.error.message;
-            else msg = JSON.stringify(data.error);
-        } else if (data.message) {
-            msg = data.message;
-        } else {
-            // Try to be helpful if unknown structure
-            msg = JSON.stringify(data).slice(0, 200);
-        }
-    }
-    
-    return { providerId: agent.id, model, text: '', error: msg };
   }
+  return { providerId: agent.id, model, text: '', error: 'Max retries exceeded' };
 }
 
 // --- Provider Implementations ---
