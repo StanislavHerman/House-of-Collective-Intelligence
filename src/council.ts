@@ -344,6 +344,18 @@ export class Council {
         // The 'currentPrompt' is "Continue". 
         // We MUST send the Tool Output, so we do NOT slice.
         let historyForRequest = this.history.getMessages();
+        
+        // CLEANUP: Remove "Efficiency" blocks from history to prevent pattern matching
+        historyForRequest = historyForRequest.map(msg => {
+            if (msg.role === 'assistant') {
+                return {
+                    ...msg,
+                    text: msg.text.replace(/(\n\s*)?📊 ЭФФЕКТИВНОСТЬ СОВЕТА[\s\S]*$/, '').replace(/(\n\s*)?COUNCIL EFFICIENCY[\s\S]*$/, '')
+                };
+            }
+            return msg;
+        });
+
         if (turn === 0) {
             historyForRequest = historyForRequest.slice(0, -1);
         }
