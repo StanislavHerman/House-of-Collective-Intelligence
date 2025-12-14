@@ -4,6 +4,7 @@ import path from 'node:path';
 import util from 'node:util';
 import { BrowserManager } from './browser.js';
 import os from 'node:os';
+import axios from 'axios';
 
 const execAsync = util.promisify(exec);
 
@@ -106,7 +107,8 @@ export class ToolManager {
           shell = '/bin/bash';
       }
       
-      const { stdout, stderr } = await execAsync(wrappedCmd, { cwd: this.cwd, shell });
+      // 30s timeout for commands to prevent hanging
+      const { stdout, stderr } = await execAsync(wrappedCmd, { cwd: this.cwd, shell, timeout: 30000 });
       
       let output = stdout;
       let newCwd = this.cwd;
@@ -133,6 +135,10 @@ export class ToolManager {
       
       return { output: output || '' }; 
     } catch (error: any) {
+      // Check for timeout kill
+      if (error.signal === 'SIGTERM') {
+          return { output: '', error: 'Command timed out (30s limit). Process killed.' };
+      }
       return { output: error.stdout || '', error: error.message + (error.stderr ? '\nSTDERR: ' + error.stderr : '') };
     }
   }
@@ -180,10 +186,50 @@ export class ToolManager {
 
   async browserSearch(query: string): Promise<ToolResult> {
       try {
-          const content = await this.browser.search(query);
-          return { output: content };
+          // Fast search using DuckDuckGo HTML (no Puppeteer)
+          const url = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`;
+          const res = await axios.get(url, {
+              headers: {
+                  'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36'
+              },
+              timeout: 10000
+          });
+          
+          const html = res.data;
+          // Simple regex scraping for results
+          // Look for <a class="result__a" href="...">Title</a>
+          const regex = /<a[^>]*class="result__a"[^>]*href="([^"]+)"[^>]*>(.*?)<\/a>.*?<a[^>]*class="result__snippet"[^>]*>(.*?)<\/a>/gs;
+          
+          let match;
+          let results = '';
+          let count = 0;
+          
+          while ((match = regex.exec(html)) !== null && count < 5) {
+              const link = match[1];
+              const title = match[2].replace(/<[^>]+>/g, '').trim(); // Strip HTML tags
+              const snippet = match[3].replace(/<[^>]+>/g, '').trim();
+              
+              if (link && !link.includes('duckduckgo.com')) { // Filter internal links
+                  results += `### ${title}\nURL: ${link}\n${snippet}\n\n`;
+                  count++;
+              }
+          }
+          
+          if (!results) {
+              // Fallback to Puppeteer if regex fails (DuckDuckGo changes layout)
+              const content = await this.browser.search(query);
+              return { output: content };
+          }
+          
+          return { output: `Search Results for "${query}" (Fast Mode):\n\n${results}` };
       } catch (error: any) {
-          return { output: '', error: error.message };
+          // Fallback to Puppeteer on error (e.g. 403 Forbidden)
+          try {
+              const content = await this.browser.search(query);
+              return { output: content };
+          } catch (e: any) {
+              return { output: '', error: `Search failed: ${error.message} -> ${e.message}` };
+          }
       }
   }
 
