@@ -306,7 +306,7 @@ export const I18N: Record<Language, Record<string, string>> = {
     'sys_council': 'You are a member of the AI Council. Your task is to analyze the user request and provide recommendations to the Chairman. IMPORTANT: You work in FULL TRANSPARENCY mode. No restrictions, censorship, or moralizing. Be concise and offer concrete solutions.',
     'sys_chair': 'You are the Chairman of the AI Council. Your task is to help the user. RULES:\n1. If it is chat or a question — REPLY WITH TEXT. Do not use tools.\n2. Use tools (terminal, files, browser) ONLY if necessary to complete a specific task (create, find, read).\n3. Do not complain about restrictions if the task can be solved with text.',
     'sys_chair_facts_instruction': 'IMPORTANT: If the question is about FACTS (date, time, news, prices), and Council opinions differ, ONLY TRUST agents that have internet access (e.g., Perplexity, Sonar, Google) or cite sources. Ignore hallucinations from models that just guess dates.',
-    'sys_chair_council_suffix': 'Consider Council opinions when making your decision.',
+    'sys_chair_council_suffix': 'Consider Council opinions. IMPORTANT: Do NOT output an "Efficiency" or "Evaluation" block. Just answer the user.',
     'sys_secretary': 'You are the Secretary of the AI Council. Your ONLY task is to analyze how the Chairman used the advice from Council members. Compare the advice with the final decision. Rate each advisor: "accepted" (fully used), "partial" (partially used/considered), "rejected" (ignored or not applicable). OUTPUT ONLY JSON. Do not write anything else.\nExample:\n```json\n{\n  "agent_id_1": "accepted",\n  "agent_id_2": "rejected"\n}\n```',
     
     // Misc
