@@ -249,13 +249,6 @@ export class Council {
 
     if (signal?.aborted) throw new Error('Aborted');
 
-    const councilMembers = enabledAgents.filter((a: AgentConfig) => a.id !== chairAgent!.id);
-
-    let chairSystemPromptText = t('sys_chair');
-    if (councilMembers.length > 0) {
-        chairSystemPromptText += " " + t('sys_chair_council_suffix');
-    }
-
     // --- INTEGRATION: Persistent Memory ---
     const memoryFile = path.resolve(process.cwd(), '.council_memory.md');
     let memoryInstruction = "";
