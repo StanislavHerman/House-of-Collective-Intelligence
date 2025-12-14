@@ -211,6 +211,16 @@ export async function sendToProvider(
 
 // --- Provider Implementations ---
 
+// Helper to determine timeout based on model
+function getTimeoutForModel(model: string): number {
+    const lower = model.toLowerCase();
+    // Reasoning models take much longer
+    if (lower.includes('reason') || lower.includes('r1') || lower.includes('o1-') || lower.includes('deep-research')) {
+        return 600000; // 10 minutes
+    }
+    return 300000; // 5 minutes default
+}
+
 async function sendOpenAICompatible(
   type: string,
   apiKey: string,
@@ -271,7 +281,7 @@ async function sendOpenAICompatible(
             },
             {
               headers,
-              timeout: 60000,
+              timeout: getTimeoutForModel(model),
               signal
             }
           );
@@ -325,7 +335,7 @@ async function sendAnthropic(
     `${API_URLS.anthropic}/messages`,
     {
       model,
-      max_tokens: 1024,
+      max_tokens: 8192,
       system: systemPrompt,
       messages: chatMessages
     },
@@ -335,7 +345,7 @@ async function sendAnthropic(
         'anthropic-version': '2023-06-01',
         'Content-Type': 'application/json'
       },
-      timeout: 60000,
+      timeout: getTimeoutForModel(model),
       signal
     }
   );
@@ -372,7 +382,7 @@ async function sendGemini(
   const res = await axios.post(
     `${API_URLS.gemini}/models/${model}:generateContent?key=${apiKey}`,
     requestBody,
-    { timeout: 60000, signal }
+    { timeout: getTimeoutForModel(model), signal }
   );
   const text = res.data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
   return { providerId: agentId, model, text };
