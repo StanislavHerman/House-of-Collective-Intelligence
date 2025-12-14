@@ -79,26 +79,37 @@ export class ToolManager {
   async runCommand(cmd: string): Promise<ToolResult> {
     try {
       // Wrap command to persist directory changes
-      // We append ' && pwd' to capture the final CWD
-      const wrappedCmd = `${cmd} && echo "__CWD__" && pwd`;
+      let wrappedCmd = '';
+      let shell = '';
       
-      const { stdout, stderr } = await execAsync(wrappedCmd, { cwd: this.cwd, shell: '/bin/bash' });
+      const isWindows = process.platform === 'win32';
+
+      if (isWindows) {
+          // PowerShell wrapper
+          // We use ; as separator.
+          // Get-Location returns the path object, we need the path string.
+          wrappedCmd = `${cmd} ; Write-Host "__CWD__" ; (Get-Location).Path`;
+          shell = 'powershell.exe';
+      } else {
+          // Bash wrapper
+          wrappedCmd = `${cmd} && echo "__CWD__" && pwd`;
+          shell = '/bin/bash';
+      }
+      
+      const { stdout, stderr } = await execAsync(wrappedCmd, { cwd: this.cwd, shell });
       
       let output = stdout;
       let newCwd = this.cwd;
       
       // Parse output for CWD marker
       if (output.includes('__CWD__')) {
-          const lines = output.split('\n');
+          const lines = output.split(/\r?\n/); // Handle Windows CRLF
           const markerIndex = lines.lastIndexOf('__CWD__');
           if (markerIndex !== -1 && markerIndex + 1 < lines.length) {
               const possibleCwd = lines[markerIndex + 1].trim();
               if (possibleCwd) {
                   newCwd = possibleCwd;
                   // Remove the marker and pwd output from displayed result
-                  // We remove everything from the marker onwards
-                  // But wait, what if there's trailing newlines?
-                  // Let's just slice the array
                   output = lines.slice(0, markerIndex).join('\n');
               }
           }
@@ -109,11 +120,6 @@ export class ToolManager {
       if (stderr) {
           output += (output ? '\n--- STDERR ---\n' : '') + stderr;
       }
-      
-      // Add CWD info to output so agent knows where it is
-      // But only if it changed or if it's a cd command?
-      // Better to just be transparent.
-      // output += `\n(CWD: ${this.cwd})`; 
       
       return { output: output || '' }; 
     } catch (error: any) {
@@ -193,10 +199,30 @@ export class ToolManager {
 
   async desktopScreenshot(filePath: string): Promise<ToolResult> {
       try {
-          // macOS specific: screencapture -x (silent) <path>
           const target = path.resolve(this.cwd, filePath);
           await fs.mkdir(path.dirname(target), { recursive: true });
-          await execAsync(`screencapture -x "${target}"`);
+
+          if (process.platform === 'darwin') {
+              // macOS
+              await execAsync(`screencapture -x "${target}"`);
+          } else if (process.platform === 'win32') {
+              // Windows (PowerShell + .NET)
+              const psScript = `
+              Add-Type -AssemblyName System.Windows.Forms
+              Add-Type -AssemblyName System.Drawing
+              $screen = [System.Windows.Forms.Screen]::PrimaryScreen
+              $bitmap = New-Object System.Drawing.Bitmap $screen.Bounds.Width, $screen.Bounds.Height
+              $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
+              $graphics.CopyFromScreen($screen.Bounds.X, $screen.Bounds.Y, 0, 0, $bitmap.Size)
+              $bitmap.Save("${target}", [System.Drawing.Imaging.ImageFormat]::Png)
+              $graphics.Dispose()
+              $bitmap.Dispose()
+              `;
+              await execAsync(`powershell -Command "${psScript.replace(/\n/g, ' ')}"`);
+          } else {
+             return { output: '', error: 'Screenshot not supported on this OS' };
+          }
+
           return { output: `Screenshot saved to ${filePath}` };
       } catch (error: any) {
           return { output: '', error: `Screenshot failed: ${error.message}` };
@@ -208,23 +234,57 @@ export class ToolManager {
           const parts = action.trim().split(' ');
           const cmd = parts[0];
           
-          if (cmd === 'type') {
-              // desktop:act type Hello World
-              const text = parts.slice(1).join(' ');
-              // Escape quotes for AppleScript
-              const safeText = text.replace(/"/g, '\\"').replace(/\\/g, '\\\\');
-              await execAsync(`osascript -e 'tell application "System Events" to keystroke "${safeText}"'`);
-              return { output: `Typed "${text}"` };
+          if (process.platform === 'darwin') {
+              // macOS Implementation
+              if (cmd === 'type') {
+                  const text = parts.slice(1).join(' ');
+                  const safeText = text.replace(/"/g, '\\"').replace(/\\/g, '\\\\');
+                  await execAsync(`osascript -e 'tell application "System Events" to keystroke "${safeText}"'`);
+                  return { output: `Typed "${text}"` };
+              }
+
+              if (cmd === 'key') {
+                  const key = parts[1].toLowerCase();
+                  await execAsync(`osascript -e 'tell application "System Events" to key code ${this.getKeyCode(key)}'`);
+                  return { output: `Pressed key ${key}` };
+              }
+          } else if (process.platform === 'win32') {
+              // Windows Implementation (SendKeys)
+              if (cmd === 'type') {
+                  const text = parts.slice(1).join(' ');
+                  // Escape special chars for SendKeys if needed, but basic text usually works
+                  // SendKeys is finicky with some chars like +, ^, %, ~, (, )
+                  // Minimal escaping:
+                  const safeText = text.replace(/([+^%~(){}])/g, '{$1}');
+                  const psScript = `
+                  Add-Type -AssemblyName System.Windows.Forms
+                  [System.Windows.Forms.SendKeys]::SendWait("${safeText}")
+                  `;
+                  await execAsync(`powershell -Command "${psScript.replace(/\n/g, ' ')}"`);
+                  return { output: `Typed "${text}"` };
+              }
+              
+              if (cmd === 'key') {
+                  let key = parts[1].toLowerCase();
+                  // Map some keys to SendKeys format
+                  const keyMap: Record<string, string> = {
+                      'enter': '{ENTER}', 'return': '{ENTER}',
+                      'tab': '{TAB}', 'space': ' ', 
+                      'backspace': '{BACKSPACE}', 'delete': '{DELETE}',
+                      'escape': '{ESC}', 'esc': '{ESC}',
+                      'left': '{LEFT}', 'right': '{RIGHT}', 'up': '{UP}', 'down': '{DOWN}'
+                  };
+                  const sendKey = keyMap[key] || key;
+                  const psScript = `
+                  Add-Type -AssemblyName System.Windows.Forms
+                  [System.Windows.Forms.SendKeys]::SendWait("${sendKey}")
+                  `;
+                  await execAsync(`powershell -Command "${psScript.replace(/\n/g, ' ')}"`);
+                  return { output: `Pressed key ${key}` };
+              }
           }
 
-          if (cmd === 'key') {
-              // desktop:act key enter
-              const key = parts[1].toLowerCase();
-              await execAsync(`osascript -e 'tell application "System Events" to key code ${this.getKeyCode(key)}'`);
-              return { output: `Pressed key ${key}` };
-          }
-
-          return { output: '', error: 'Unknown desktop action' };
+          return { output: '', error: 'Unknown desktop action or OS not supported' };
       } catch (error: any) {
            return { output: '', error: error.message };
       }
