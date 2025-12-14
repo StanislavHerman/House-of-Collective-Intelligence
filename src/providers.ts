@@ -454,8 +454,21 @@ export async function testApiKey(type: string, apiKey: string): Promise<{ valid:
     });
     return { valid: true };
   } catch (error: any) {
+    const status = error?.response?.status;
     const msg = error?.response?.data?.error?.message || error?.message || 'Ошибка сети';
-    console.error(`Perplexity API key test failed: ${msg}`); // Отладочный вывод
+    console.error(`API key test failed: ${msg} (Status: ${status})`);
+
+    // If explicit auth error -> invalid
+    if (status === 401 || status === 403) {
+        return { valid: false, error: msg };
+    }
+
+    // If server error (5xx), assume key is valid (request reached server)
+    // Perplexity often returns 500/502 for model issues
+    if (status && status >= 500) {
+        return { valid: true };
+    }
+
     return { valid: false, error: msg };
   }
 }
