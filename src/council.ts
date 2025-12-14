@@ -511,11 +511,15 @@ export class Council {
       return this.history.getMessages().map(msg => {
           if (msg.role === 'assistant') {
               let text = msg.text;
-              // Remove explicit blocks
-              text = text.replace(/(\n\s*)?📊 ЭФФЕКТИВНОСТЬ СОВЕТА[\s\S]*$/, '');
-              text = text.replace(/(\n\s*)?COUNCIL EFFICIENCY[\s\S]*$/, '');
-              text = text.replace(/(\n\s*)?📊 COUNCIL EFFICIENCY[\s\S]*$/, '');
-              text = text.replace(/(\n\s*)?📊 EVALUATION[\s\S]*$/, '');
+              // Remove explicit blocks with AGGRESSIVE regex
+              // Matches: 📊 (optional **) ЭФФЕКТИВНОСТЬ (optional **) СОВЕТА (optional :) ... rest of string
+              const regexRu = /(\n\s*)?📊\s*(\*\*)?\s*ЭФФЕКТИВНОСТЬ\s+СОВЕТА.*$/is;
+              const regexEn = /(\n\s*)?📊\s*(\*\*)?\s*COUNCIL\s+EFFICIENCY.*$/is;
+              const regexEval = /(\n\s*)?📊\s*(\*\*)?\s*EVALUATION.*$/is;
+
+              text = text.replace(regexRu, '');
+              text = text.replace(regexEn, '');
+              text = text.replace(regexEval, '');
               
               return { ...msg, text };
           }
