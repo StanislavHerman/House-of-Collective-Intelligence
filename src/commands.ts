@@ -456,7 +456,12 @@ async function cmdUpdate(ctx: CommandContext) {
         process.exit(0);
 
     } catch (err: any) {
-        console.error(chalk.red(`\n  ✗ ${t('update_error')}: ${err.message}\n`));
+        if (err.message.includes('not a git repository')) {
+            console.error(chalk.yellow(`\n  ⚠️  ${t('update_no_git')}`));
+            console.error(chalk.gray(`  ${t('update_git_hint')}\n`));
+        } else {
+            console.error(chalk.red(`\n  ✗ ${t('update_error')}: ${err.message}\n`));
+        }
     }
 }
 

@@ -13,6 +13,13 @@ export const I18N: Record<Language, Record<string, string>> = {
     'cmd_settings': 'Настройки доступа',
     'cmd_new': 'Новый чат',
     'cmd_exit': 'Выход',
+    'update_downloading': 'Скачиваю обновление...',
+    'update_installing': 'Обновляю зависимости...',
+    'update_building': 'Собираю проект...',
+    'update_success': 'Обновление завершено! Перезапустите программу.',
+    'update_error': 'Ошибка обновления',
+    'update_no_git': 'Невозможно обновить: это не git-репозиторий',
+    'update_git_hint': 'Чтобы работало авто-обновление, удалите папку и скачайте проект через "git clone ..."',
     
     // Settings
     'settings_title': 'НАСТРОЙКИ ДОСТУПА',
