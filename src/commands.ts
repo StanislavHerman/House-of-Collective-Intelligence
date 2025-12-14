@@ -522,10 +522,8 @@ async function cmdStats(ctx: CommandContext) {
         return;
     }
 
-    console.log(chalk.gray('  ' + t('stats_header')));
-    console.log(chalk.gray('  ' + '-'.repeat(105)));
-
-    agents.forEach(a => {
+    // 1. Prepare data rows
+    const rows = agents.map(a => {
         const stats = ctx.council.getStats(a.id);
         const total = stats.totalSuggestions;
         
@@ -543,16 +541,64 @@ async function cmdStats(ctx: CommandContext) {
             else effColor = chalk.red;
         }
 
-        console.log(
-            '  ' + 
-            a.name.padEnd(20) + ' ' + 
-            chalk.gray(`${a.providerType}/${a.model}`.padEnd(25)) + ' ' + 
-            total.toString().padEnd(8) + ' ' + 
-            chalk.green(stats.acceptedSuggestions.toString().padEnd(10)) + ' ' + 
-            chalk.yellow(stats.partiallyAcceptedSuggestions.toString().padEnd(10)) + ' ' + 
-            chalk.red(stats.rejectedSuggestions.toString().padEnd(10)) + ' ' + 
-            effColor(effStr)
-        );
+        const modelStr = `${a.providerType}/${a.model}`;
+
+        return {
+            name: a.name,
+            model: modelStr,
+            total: total.toString(),
+            accepted: stats.acceptedSuggestions.toString(),
+            partial: stats.partiallyAcceptedSuggestions.toString(),
+            rejected: stats.rejectedSuggestions.toString(),
+            eff: effStr,
+            effColor
+        };
+    });
+
+    // 2. Calculate dynamic column widths (Header vs Content)
+    const headers = {
+        name: t('stats_col_agent'),
+        model: t('stats_col_model'),
+        total: t('stats_col_total'),
+        accepted: t('stats_col_accepted'),
+        partial: t('stats_col_partial'),
+        rejected: t('stats_col_rejected'),
+        eff: t('stats_col_eff')
+    };
+
+    const wName = Math.max(headers.name.length, ...rows.map(r => r.name.length)) + 2;
+    const wModel = Math.max(headers.model.length, ...rows.map(r => r.model.length)) + 2;
+    const wTotal = Math.max(headers.total.length, ...rows.map(r => r.total.length)) + 2;
+    const wAcc = Math.max(headers.accepted.length, ...rows.map(r => r.accepted.length)) + 2;
+    const wPart = Math.max(headers.partial.length, ...rows.map(r => r.partial.length)) + 2;
+    const wRej = Math.max(headers.rejected.length, ...rows.map(r => r.rejected.length)) + 2;
+    const wEff = Math.max(headers.eff.length, ...rows.map(r => r.eff.length)) + 1;
+
+    // 3. Print Header
+    const headerStr = '  ' +
+        headers.name.padEnd(wName) +
+        headers.model.padEnd(wModel) +
+        headers.total.padEnd(wTotal) +
+        headers.accepted.padEnd(wAcc) +
+        headers.partial.padEnd(wPart) +
+        headers.rejected.padEnd(wRej) +
+        headers.eff.padEnd(wEff);
+
+    console.log(chalk.gray(headerStr));
+    console.log(chalk.gray('  ' + '-'.repeat(headerStr.length - 2)));
+
+    // 4. Print Rows
+    rows.forEach(r => {
+        const rowStr = '  ' +
+            r.name.padEnd(wName) +
+            chalk.gray(r.model.padEnd(wModel)) +
+            r.total.padEnd(wTotal) +
+            chalk.green(r.accepted.padEnd(wAcc)) +
+            chalk.yellow(r.partial.padEnd(wPart)) +
+            chalk.red(r.rejected.padEnd(wRej)) +
+            r.effColor(r.eff.padEnd(wEff));
+        
+        console.log(rowStr);
     });
     console.log('');
 }
