@@ -9,6 +9,9 @@ let rl: ReturnType<typeof createInterface> | null = null;
 export function initReadline() {
   if (rl) return;
   
+  // Enable Bracketed Paste Mode
+  process.stdout.write('\x1b[?2004h');
+
   rl = createInterface({
     input: process.stdin,
     output: process.stdout,
@@ -26,6 +29,8 @@ export function initReadline() {
 
 export function closeReadline() {
   if (rl) {
+      // Disable Bracketed Paste Mode
+      process.stdout.write('\x1b[?2004l');
       rl.close();
       rl = null;
   }
