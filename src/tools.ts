@@ -192,21 +192,86 @@ export class ToolManager {
   async editFile(filePath: string, search: string, replace: string): Promise<ToolResult> {
       try {
           const target = this.resolvePath(filePath);
-          if (!await fs.access(target).then(() => true).catch(() => false)) {
-              return { output: '', error: `File not found: ${filePath}` };
-          }
-
           const content = await fs.readFile(target, 'utf8');
           
-          // Normalize line endings for search
-          // This is tricky. Let's try exact match first.
+          // 1. Try Exact Match
           if (content.includes(search)) {
               const newContent = content.replace(search, replace);
               await fs.writeFile(target, newContent);
-              return { output: `Successfully edited ${filePath}` };
-          } else {
-              return { output: '', error: `Search string not found in ${filePath}. Make sure to match whitespace exactly.` };
+              return { output: `Successfully edited ${filePath} (Exact Match)` };
           }
+
+          // 2. Try Line-by-Line Fuzzy Match (Ignore indentation/whitespace differences)
+          const contentLines = content.split(/\r?\n/);
+          const searchLines = search.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+          
+          if (searchLines.length === 0) {
+             return { output: '', error: `Search block is empty or whitespace only.` };
+          }
+
+          let matchIndex = -1;
+          let matchLength = 0;
+
+          // Scan content lines
+          for (let i = 0; i < contentLines.length; i++) {
+              // Optimistic check: does this line match the first search line?
+              if (contentLines[i].trim() === searchLines[0]) {
+                  // Potential match start. Verify subsequent lines.
+                  let isMatch = true;
+                  let searchIdx = 1;
+                  let contentIdx = i + 1;
+                  
+                  while (searchIdx < searchLines.length) {
+                      if (contentIdx >= contentLines.length) {
+                          isMatch = false;
+                          break;
+                      }
+                      
+                      // Skip empty lines in content if search block skips them? 
+                      // Or just strictly match non-empty lines?
+                      // Let's assume searchLines only contains non-empty. 
+                      // But content might have extra empty lines.
+                      // Simple approach: Strict match on non-empty lines sequence.
+                      
+                      const cLine = contentLines[contentIdx].trim();
+                      if (cLine === '') {
+                          contentIdx++;
+                          continue; // Skip empty lines in file
+                      }
+                      
+                      if (cLine !== searchLines[searchIdx]) {
+                          isMatch = false;
+                          break;
+                      }
+                      searchIdx++;
+                      contentIdx++;
+                  }
+                  
+                  if (isMatch) {
+                      matchIndex = i;
+                      matchLength = contentIdx - i; // Number of lines in content to replace
+                      break;
+                  }
+              }
+          }
+
+          if (matchIndex !== -1) {
+              // Found fuzzy match!
+              // Replace lines [matchIndex, matchIndex + matchLength) with 'replace'
+              // We just insert the raw 'replace' string.
+              // Note: This replaces the entire block of lines.
+              
+              const before = contentLines.slice(0, matchIndex).join('\n');
+              const after = contentLines.slice(matchIndex + matchLength).join('\n');
+              
+              // Handle newline gluing
+              const newContent = (before ? before + '\n' : '') + replace + (after ? '\n' + after : '');
+              
+              await fs.writeFile(target, newContent);
+              return { output: `Successfully edited ${filePath} (Fuzzy Match)` };
+          }
+
+          return { output: '', error: `Search string not found in ${filePath}. Tried exact match and fuzzy line match.` };
       } catch (error: any) {
           return { output: '', error: `Edit failed: ${error.message}` };
       }

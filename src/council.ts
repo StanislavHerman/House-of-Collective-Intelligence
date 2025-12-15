@@ -656,7 +656,8 @@ export class Council {
     
     // Regex для edit:path
     // Allow: edit: path OR edit path
-    const editRegex = /```edit[:\s]\s*(.*?)\s*([\s\S]*?)\s*```/g;
+    // Force greedy match (.*) for path
+    const editRegex = /```\s*edit[:\s]\s*(.*)\s*([\s\S]*?)\s*```/g;
     while ((match = editRegex.exec(text)) !== null) {
         results.push({ type: 'edit', arg: match[1].trim(), content: match[2].trim() });
     }
