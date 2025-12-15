@@ -17,6 +17,19 @@ export function initReadline() {
   // Create a proxy stream to intercept paste events
   pasteProxy = new PassThrough();
   
+  // TTY IMPERSONATION: Make readline think this is a real TTY
+  (pasteProxy as any).isTTY = process.stdin.isTTY;
+  (pasteProxy as any).setRawMode = (mode: boolean) => {
+      if (process.stdin.isTTY) {
+          return process.stdin.setRawMode(mode);
+      }
+      return false;
+  };
+  
+  // Forward controls
+  (pasteProxy as any).pause = () => process.stdin.pause();
+  (pasteProxy as any).resume = () => process.stdin.resume();
+
   let inPaste = false;
   let pasteBuffer = '';
   let lastPasteEndTime = 0;
