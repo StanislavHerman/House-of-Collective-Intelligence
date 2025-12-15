@@ -109,30 +109,50 @@ export class ToolManager {
   }
 
   async runDiagnostics(): Promise<ToolResult> {
-    const report: string[] = [];
-    report.push(`🔍 **System Diagnostics Report**`);
-    report.push(`Time: ${new Date().toISOString()}`);
-    report.push(`Platform: ${os.platform()} ${os.release()} (${os.arch()})`);
-    report.push(`Node: ${process.version}`);
-    report.push(`CWD: ${this.cwd}`);
-    
-    // 1. Filesystem Check
-    try {
-        const testFile = path.join(this.cwd, '.council_diag_test');
-        await fs.writeFile(testFile, 'test_write');
-        const content = await fs.readFile(testFile, 'utf8');
-        await fs.unlink(testFile);
-        
-        if (content === 'test_write') {
-            report.push(`✅ Filesystem: Read/Write OK`);
-        } else {
-            report.push(`❌ Filesystem: Content mismatch`);
-        }
-    } catch (e: any) {
-        report.push(`❌ Filesystem: Error (${e.message})`);
-    }
-    
-    // 2. Shell Check
+      const report: string[] = [];
+      report.push(`🔍 **System Diagnostics Report**`);
+      report.push(`Time: ${new Date().toISOString()}`);
+      report.push(`Platform: ${os.platform()} ${os.release()} (${os.arch()})`);
+      report.push(`Node: ${process.version}`);
+      report.push(`CWD: ${this.cwd}`);
+      
+      // 1. Filesystem & Edit Check (Comprehensive)
+      const testDir = path.join(this.cwd, '.council_diag_tmp');
+      const testFile = path.join(testDir, 'test.txt');
+      
+      try {
+          // Cleanup prev if exists
+          try { await fs.rm(testDir, { recursive: true, force: true }); } catch {}
+          await fs.mkdir(testDir, { recursive: true });
+
+          // A. Write
+          await this.writeFile(testFile, 'Line 1\nLine 2\nLine 3');
+          report.push(`✅ FS: Write OK`);
+
+          // B. Edit (Fuzzy)
+          const editRes = await this.editFile(testFile, 'Line 2', 'Line 2 EDITED');
+          if (editRes.error) {
+              report.push(`❌ FS: Edit Failed (${editRes.error})`);
+          } else {
+              report.push(`✅ FS: Edit OK`);
+          }
+
+          // C. Read & Verify
+          const readRes = await this.readFile(testFile);
+          if (readRes.output.includes('Line 2 EDITED')) {
+              report.push(`✅ FS: Verify Content OK`);
+          } else {
+              report.push(`❌ FS: Verify Content Mismatch`);
+          }
+
+          // Cleanup
+          await fs.rm(testDir, { recursive: true, force: true });
+          
+      } catch (e: any) {
+          report.push(`❌ FS: Critical Error (${e.message})`);
+      }
+      
+      // 2. Shell Check
     try {
         const res = await this.runCommand('echo "shell_ok"');
         if (res.output.includes('shell_ok')) {

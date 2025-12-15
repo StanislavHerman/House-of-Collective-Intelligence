@@ -199,6 +199,7 @@ export const I18N: Record<Language, Record<string, string>> = {
     'cmd_voice': 'Voice Input',
     'cmd_new': 'New Chat',
     'cmd_exit': 'Exit',
+    'cmd_doctor': 'System Doctor (Diagnostics)',
     'cmd_paste': 'Safe Paste (Editor)',
     'paste_editor_opening': 'Opening editor for input',
     'paste_editor_hint': 'Paste text, save and close editor (Ctrl+X -> Y -> Enter for nano)',

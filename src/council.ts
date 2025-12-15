@@ -52,6 +52,10 @@ export class Council {
       await this.tools.close();
   }
 
+  async runDiagnostics() {
+      return await this.tools.runDiagnostics();
+  }
+
   resetStats() {
       this.stats = {};
       this.saveStats();

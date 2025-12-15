@@ -43,6 +43,7 @@ export const COMMANDS = [
   { cmd: '/lang', desc: 'cmd_lang' },
   { cmd: '/new', desc: 'cmd_new' },
   { cmd: '/paste', desc: 'cmd_paste' },
+  { cmd: '/doctor', desc: 'cmd_doctor' },
   { cmd: '/verify', desc: 'cmd_verify' },
   { cmd: '/exit', desc: 'cmd_exit' },
 ];
@@ -63,6 +64,11 @@ export async function handleCommand(input: string, ctx: CommandContext): Promise
     case '/paste':
     case '/edit':
       return await cmdPaste(ctx);
+
+    case '/doctor':
+    case '/diag':
+      await cmdDoctor(ctx);
+      return false;
 
     case '/verify':
       await cmdVerify(ctx);
@@ -577,6 +583,22 @@ async function cmdPaste(ctx: CommandContext): Promise<string | boolean> {
         console.log(chalk.yellow(`  ⚠️ ${t('paste_empty')}\n`));
         return false;
     }
+}
+
+async function cmdDoctor(ctx: CommandContext) {
+    console.log(chalk.cyan(`\n  🏥 ${t('cmd_doctor')}\n`));
+    console.log(chalk.gray(`  Running system diagnostics...`));
+    
+    try {
+        const res = await ctx.council.runDiagnostics();
+        console.log(res.output);
+        if (res.error) {
+            console.log(chalk.red(`\n  Error: ${res.error}`));
+        }
+    } catch (e: any) {
+        console.log(chalk.red(`\n  Failed to run diagnostics: ${e.message}`));
+    }
+    console.log('');
 }
 
 async function cmdVerify(ctx: CommandContext) {
