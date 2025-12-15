@@ -18,6 +18,7 @@ export const TOOLS_DEF = `
 
 1. run_command
    - Описание: Выполнить команду оболочки (bash). Используй для git, установки пакетов, листинга файлов и т.д.
+   - ВАЖНО: Команда \`cd <путь>\` меняет рабочую папку НАВСЕГДА для следующих команд.
    - Формат вызова: 
      \`\`\`bash
      <команда>
@@ -127,8 +128,9 @@ export class ToolManager {
       } else {
           // Mac/Linux wrapper
           // Use zsh on macOS for better compatibility (globbing etc), bash on Linux
+          // Use ; instead of && to ensure CWD is captured even if command fails
           shell = process.platform === 'darwin' ? '/bin/zsh' : '/bin/bash';
-          wrappedCmd = `${cmd} && echo "__CWD__" && pwd`;
+          wrappedCmd = `${cmd}; echo "__CWD__"; pwd`;
       }
       
       // 30s timeout for commands to prevent hanging
