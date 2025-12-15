@@ -646,46 +646,51 @@ export class Council {
   private parseTools(text: string): { type: 'command' | 'file' | 'edit' | 'read' | 'tree' | 'search' | 'browser_open' | 'browser_search' | 'browser_act' | 'desktop_screenshot' | 'desktop_act', content: string, arg: string }[] {
     const results: any[] = [];
     
-    // Regex для bash
-    const cmdRegex = /```bash\s*([\s\S]*?)\s*```/g;
+    // Regex для bash (command)
+    // Allow ```bash or ```sh or just ```command
+    const cmdRegex = /```(?:bash|sh|zsh|command)\s*([\s\S]*?)\s*```/g;
     let match;
     while ((match = cmdRegex.exec(text)) !== null) {
       results.push({ type: 'command', content: match[1].trim(), arg: '' });
     }
     
     // Regex для edit:path
-    const editRegex = /```edit:\s*(.*?)\s*([\s\S]*?)\s*```/g;
+    // Allow: edit: path OR edit path
+    const editRegex = /```edit[:\s]\s*(.*?)\s*([\s\S]*?)\s*```/g;
     while ((match = editRegex.exec(text)) !== null) {
         results.push({ type: 'edit', arg: match[1].trim(), content: match[2].trim() });
     }
 
     // Regex для tree:path
-    const treeRegex = /```tree:\s*(.*?)\s*```/g;
+    // Allow: tree: path OR tree path OR tree\npath
+    const treeRegex = /```tree[:\s]?\s*([\s\S]*?)\s*```/g;
     while ((match = treeRegex.exec(text)) !== null) {
-        results.push({ type: 'tree', content: match[1].trim(), arg: '' });
+        const content = match[1].trim();
+        if (content) results.push({ type: 'tree', content, arg: '' });
     }
 
     // Regex для search:query
-    const searchRegex = /```search:\s*(.*?)\s*```/g;
+    const searchRegex = /```search[:\s]?\s*([\s\S]*?)\s*```/g;
     while ((match = searchRegex.exec(text)) !== null) {
-        results.push({ type: 'search', content: match[1].trim(), arg: '' });
+        const content = match[1].trim();
+        if (content) results.push({ type: 'search', content, arg: '' });
     }
 
     // Regex для file:path
-    // Allow more flexible spacing: file: path or file : path
-    const fileRegex = /```file:\s*(.*?)\s*([\s\S]*?)\s*```/g;
+    const fileRegex = /```file[:\s]\s*(.*?)\s*([\s\S]*?)\s*```/g;
     while ((match = fileRegex.exec(text)) !== null) {
       results.push({ type: 'file', arg: match[1].trim(), content: match[2].trim() });
     }
     
     // Regex для read:path
-    const readRegex = /```read:(.*?)\s*```/g;
+    const readRegex = /```read[:\s]?\s*([\s\S]*?)\s*```/g;
     while ((match = readRegex.exec(text)) !== null) {
-      results.push({ type: 'read', content: match[1].trim(), arg: '' });
+      const content = match[1].trim();
+      if (content) results.push({ type: 'read', content, arg: '' });
     }
     
     // Regex для browser:open
-    const bOpenRegex = /```browser:open\s*(.*?)\s*```/g;
+    const bOpenRegex = /```browser:open[:\s]?\s*([\s\S]*?)\s*```/g;
     while ((match = bOpenRegex.exec(text)) !== null) {
       results.push({ type: 'browser_open', content: match[1].trim(), arg: '' });
     }
