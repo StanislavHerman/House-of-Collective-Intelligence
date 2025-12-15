@@ -12,7 +12,10 @@ export function initReadline() {
   if (rl) return;
   
   // Enable Bracketed Paste Mode
-  process.stdout.write('\x1b[?2004h');
+  // process.stdout.write('\x1b[?2004h');
+
+  // Ensure stdin is flowing
+  process.stdin.resume();
 
   rl = createInterface({
     input: process.stdin, // Revert to standard stdin
@@ -22,7 +25,7 @@ export function initReadline() {
   });
 
   // Hook _ttyWrite to intercept paste events safely
-  interceptPaste(rl);
+  // interceptPaste(rl);
 
   // Handle global SIGINT only if we are NOT in a question callback
   // (question callback handles it locally)
@@ -105,7 +108,7 @@ function interceptPaste(rlInterface: any) {
 export function closeReadline() {
   if (rl) {
       // Disable Bracketed Paste Mode
-      process.stdout.write('\x1b[?2004l');
+      // process.stdout.write('\x1b[?2004l');
       rl.close();
       rl = null;
   }
