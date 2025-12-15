@@ -6,7 +6,7 @@ import { t } from './i18n.js';
 
 // Singleton Readline Interface
 let rl: ReturnType<typeof createInterface> | null = null;
-let pasteProxy: PassThrough | null = null;
+let pasteProxy: any = null; // Deprecated, but keeping var for cleanup if needed
 
 export function initReadline() {
   if (rl) return;
@@ -14,95 +14,15 @@ export function initReadline() {
   // Enable Bracketed Paste Mode
   process.stdout.write('\x1b[?2004h');
 
-  // Create a proxy stream to intercept paste events
-  pasteProxy = new PassThrough();
-  
-  // TTY IMPERSONATION: Make readline think this is a real TTY
-  (pasteProxy as any).isTTY = process.stdin.isTTY;
-  (pasteProxy as any).setRawMode = (mode: boolean) => {
-      if (process.stdin.isTTY) {
-          return process.stdin.setRawMode(mode);
-      }
-      return false;
-  };
-  
-  // Forward controls
-  (pasteProxy as any).pause = () => process.stdin.pause();
-  (pasteProxy as any).resume = () => process.stdin.resume();
-
-  let inPaste = false;
-  let pasteBuffer = '';
-  let lastPasteEndTime = 0;
-
-  const onData = (chunk: Buffer) => {
-      let str = chunk.toString();
-      
-      // Paste Start
-      if (str.includes('\x1b[200~')) {
-          inPaste = true;
-          str = str.replace(/\x1b\[200~/g, '');
-          pasteBuffer = ''; // Reset buffer
-      }
-
-      // Paste End
-      if (str.includes('\x1b[201~')) {
-          inPaste = false;
-          lastPasteEndTime = Date.now();
-
-          // Capture the part before the end tag
-          const parts = str.split('\x1b[201~');
-          pasteBuffer += parts[0];
-          
-          // Process the full paste buffer
-          // 1. Strip trailing newlines (prevents immediate submit)
-          pasteBuffer = pasteBuffer.replace(/(\r\n|\n|\r)+$/, '');
-          
-          // 2. Replace internal newlines with spaces (prevents multiline execution)
-          pasteBuffer = pasteBuffer.replace(/(\r\n|\n|\r)/g, ' ');
-          
-          // Push sanitized paste
-          pasteProxy?.write(pasteBuffer);
-          
-          // Process suffix (data after 201~)
-          if (parts[1]) {
-              let suffix = parts[1];
-              // Strip leading newlines from suffix to prevent immediate submit
-              suffix = suffix.replace(/^(\r\n|\n|\r)+/, '');
-              if (suffix) pasteProxy?.write(suffix);
-          }
-          
-          pasteBuffer = '';
-          return;
-      }
-
-      if (inPaste) {
-          pasteBuffer += str;
-      } else {
-          // Normal input
-          // DEBOUNCE: If we just finished pasting (< 100ms ago) and this is a newline, ignore it
-          if (Date.now() - lastPasteEndTime < 100) {
-              if (/^(\r\n|\n|\r)+$/.test(str)) {
-                  return; // Ignore "ghost" newline
-              }
-          }
-          pasteProxy?.write(chunk);
-      }
-  };
-
-  process.stdin.on('data', onData);
-
-  // Clean up listener when RL closes? 
-  // We attach it to process.stdin which is global. We should remove it on close.
-  (pasteProxy as any)._cleanup = () => {
-      process.stdin.removeListener('data', onData);
-  };
-
   rl = createInterface({
-    input: pasteProxy, // Use our proxy
+    input: process.stdin, // Revert to standard stdin
     output: process.stdout,
     terminal: true,
     historySize: 200
   });
+
+  // Hook _ttyWrite to intercept paste events safely
+  interceptPaste(rl);
 
   // Handle global SIGINT only if we are NOT in a question callback
   // (question callback handles it locally)
@@ -112,18 +32,82 @@ export function initReadline() {
   });
 }
 
+// Internal hook for paste handling
+function interceptPaste(rlInterface: any) {
+    const originalTtyWrite = rlInterface._ttyWrite;
+    let inPaste = false;
+    let pasteBuffer = '';
+    let lastPasteTime = 0;
+
+    rlInterface._ttyWrite = function(s: string, key: any) {
+        const str = s || '';
+
+        // Paste Start
+        if (str.includes('\x1b[200~')) {
+            inPaste = true;
+            pasteBuffer = '';
+            // If the start tag is mixed with content, handle it?
+            // Usually it comes as a distinct sequence or start of chunk.
+            // Simplified: just switch mode.
+            // Remove the tag from str
+            const clean = str.replace(/\x1b\[200~/g, '');
+            if (clean) pasteBuffer += clean;
+            return;
+        }
+
+        // Paste End
+        if (str.includes('\x1b[201~')) {
+            inPaste = false;
+            lastPasteTime = Date.now();
+            
+            const parts = str.split('\x1b[201~');
+            pasteBuffer += parts[0];
+            
+            // Sanitize Buffer
+            // 1. Strip trailing newlines
+            pasteBuffer = pasteBuffer.replace(/(\r\n|\n|\r)+$/, '');
+            // 2. Flatten internal newlines
+            pasteBuffer = pasteBuffer.replace(/(\r\n|\n|\r)/g, ' ');
+
+            // Inject sanitized buffer
+            if (pasteBuffer) {
+                originalTtyWrite.call(rlInterface, pasteBuffer, key);
+            }
+            
+            // Handle suffix (data after end tag)
+            let suffix = parts[1] || '';
+            // Strip leading newlines from suffix (debounce)
+            suffix = suffix.replace(/^(\r\n|\n|\r)+/, '');
+            
+            if (suffix) {
+                originalTtyWrite.call(rlInterface, suffix, key);
+            }
+            
+            pasteBuffer = '';
+            return;
+        }
+
+        if (inPaste) {
+            pasteBuffer += str;
+            return; // Suppress output
+        }
+
+        // Normal Input Debounce (for loose newlines right after paste)
+        if (Date.now() - lastPasteTime < 100 && /^(\r\n|\n|\r)+$/.test(str)) {
+             return; // Ignore ghost newline
+        }
+
+        // Pass through to original
+        originalTtyWrite.call(rlInterface, s, key);
+    };
+}
+
 export function closeReadline() {
   if (rl) {
       // Disable Bracketed Paste Mode
       process.stdout.write('\x1b[?2004l');
-      
-      if (pasteProxy && (pasteProxy as any)._cleanup) {
-          (pasteProxy as any)._cleanup();
-      }
-      
       rl.close();
       rl = null;
-      pasteProxy = null;
   }
 }
 
