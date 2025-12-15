@@ -677,7 +677,8 @@ export class Council {
     }
 
     // Regex для file:path
-    const fileRegex = /```file[:\s]\s*(.*?)\s*([\s\S]*?)\s*```/g;
+    // Force greedy match (.*) for path to prevent content group from eating it
+    const fileRegex = /```\s*file[:\s]\s*(.*)\s*([\s\S]*?)\s*```/g;
     while ((match = fileRegex.exec(text)) !== null) {
       results.push({ type: 'file', arg: match[1].trim(), content: match[2].trim() });
     }
