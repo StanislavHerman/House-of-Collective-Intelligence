@@ -529,6 +529,9 @@ export class Council {
             } else if (tool.type === 'desktop_act') {
                 const res = await this.tools.desktopAct(tool.content);
                 toolOutputMsg += `Desktop Act: ${tool.content}\nResult: ${res.output}\nError: ${res.error || ''}\n\n`;
+            } else if (tool.type === 'system_diagnostics') {
+                const res = await this.tools.runDiagnostics();
+                toolOutputMsg += `System Diagnostics:\n${res.output}\nError: ${res.error || ''}\n\n`;
             }
         }
         
@@ -643,7 +646,7 @@ export class Council {
       }
   }
 
-  private parseTools(text: string): { type: 'command' | 'file' | 'edit' | 'read' | 'tree' | 'search' | 'browser_open' | 'browser_search' | 'browser_act' | 'desktop_screenshot' | 'desktop_act', content: string, arg: string }[] {
+  private parseTools(text: string): { type: 'command' | 'file' | 'edit' | 'read' | 'tree' | 'search' | 'browser_open' | 'browser_search' | 'browser_act' | 'desktop_screenshot' | 'desktop_act' | 'system_diagnostics', content: string, arg: string }[] {
     const results: any[] = [];
     
     // Regex для bash (command)
@@ -652,6 +655,12 @@ export class Council {
     let match;
     while ((match = cmdRegex.exec(text)) !== null) {
       results.push({ type: 'command', content: match[1].trim(), arg: '' });
+    }
+
+    // Regex для system_diagnostics
+    const sysDiagRegex = /```system_diagnostics\s*```/g;
+    while ((match = sysDiagRegex.exec(text)) !== null) {
+        results.push({ type: 'system_diagnostics', content: '', arg: '' });
     }
     
     // Regex для edit:path

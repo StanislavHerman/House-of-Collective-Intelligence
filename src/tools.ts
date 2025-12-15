@@ -92,6 +92,11 @@ export const TOOLS_DEF = `
      \`\`\`desktop:act type <текст>\`\`\`
      // ИЛИ
      \`\`\`desktop:act key <название_клавиши> (enter, return, tab, space, escape, backspace, left, right, up, down)\`\`\`
+
+12. system_diagnostics
+   - Описание: Запустить полную самодиагностику системы (файлы, shell, интернет, git).
+   - Формат вызова:
+     \`\`\`system_diagnostics\`\`\`
 `;
 
 export class ToolManager {
@@ -101,6 +106,65 @@ export class ToolManager {
 
   async close() {
       await this.browser.close();
+  }
+
+  async runDiagnostics(): Promise<ToolResult> {
+    const report: string[] = [];
+    report.push(`🔍 **System Diagnostics Report**`);
+    report.push(`Time: ${new Date().toISOString()}`);
+    report.push(`Platform: ${os.platform()} ${os.release()} (${os.arch()})`);
+    report.push(`Node: ${process.version}`);
+    report.push(`CWD: ${this.cwd}`);
+    
+    // 1. Filesystem Check
+    try {
+        const testFile = path.join(this.cwd, '.council_diag_test');
+        await fs.writeFile(testFile, 'test_write');
+        const content = await fs.readFile(testFile, 'utf8');
+        await fs.unlink(testFile);
+        
+        if (content === 'test_write') {
+            report.push(`✅ Filesystem: Read/Write OK`);
+        } else {
+            report.push(`❌ Filesystem: Content mismatch`);
+        }
+    } catch (e: any) {
+        report.push(`❌ Filesystem: Error (${e.message})`);
+    }
+    
+    // 2. Shell Check
+    try {
+        const res = await this.runCommand('echo "shell_ok"');
+        if (res.output.includes('shell_ok')) {
+            report.push(`✅ Shell (exec): OK`);
+        } else {
+            report.push(`❌ Shell: output mismatch`);
+        }
+    } catch (e: any) {
+        report.push(`❌ Shell: Error (${e.message})`);
+    }
+    
+    // 3. Internet Check
+    try {
+        await axios.get('https://www.google.com', { timeout: 5000 });
+        report.push(`✅ Internet: OK`);
+    } catch (e: any) {
+         report.push(`⚠️ Internet: Unreachable or Timeout (${e.message})`);
+    }
+    
+    // 4. Git Check
+    try {
+        const gitRes = await this.runCommand('git --version');
+        if (!gitRes.error) {
+            report.push(`✅ Git: Installed (${gitRes.output.trim()})`);
+        } else {
+            report.push(`⚠️ Git: Error (${gitRes.error})`);
+        }
+    } catch (e: any) {
+        report.push(`⚠️ Git: Not found`);
+    }
+
+    return { output: report.join('\n') };
   }
 
   // Helper to resolve paths with ~ support
