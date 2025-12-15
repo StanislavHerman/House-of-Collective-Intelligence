@@ -19,6 +19,7 @@ export function initReadline() {
   
   let inPaste = false;
   let pasteBuffer = '';
+  let lastPasteEndTime = 0;
 
   const onData = (chunk: Buffer) => {
       let str = chunk.toString();
@@ -33,6 +34,8 @@ export function initReadline() {
       // Paste End
       if (str.includes('\x1b[201~')) {
           inPaste = false;
+          lastPasteEndTime = Date.now();
+
           // Capture the part before the end tag
           const parts = str.split('\x1b[201~');
           pasteBuffer += parts[0];
@@ -47,8 +50,13 @@ export function initReadline() {
           // Push sanitized paste
           pasteProxy?.write(pasteBuffer);
           
-          // Push the rest of the chunk (after the end tag)
-          if (parts[1]) pasteProxy?.write(parts[1]);
+          // Process suffix (data after 201~)
+          if (parts[1]) {
+              let suffix = parts[1];
+              // Strip leading newlines from suffix to prevent immediate submit
+              suffix = suffix.replace(/^(\r\n|\n|\r)+/, '');
+              if (suffix) pasteProxy?.write(suffix);
+          }
           
           pasteBuffer = '';
           return;
@@ -57,6 +65,13 @@ export function initReadline() {
       if (inPaste) {
           pasteBuffer += str;
       } else {
+          // Normal input
+          // DEBOUNCE: If we just finished pasting (< 100ms ago) and this is a newline, ignore it
+          if (Date.now() - lastPasteEndTime < 100) {
+              if (/^(\r\n|\n|\r)+$/.test(str)) {
+                  return; // Ignore "ghost" newline
+              }
+          }
           pasteProxy?.write(chunk);
       }
   };
