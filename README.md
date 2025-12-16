@@ -16,6 +16,7 @@
 - **Cross-Platform**: Works natively on **macOS** and **Windows** (no WSL required).
 - **Role-Playing**: Assign roles (Chairman, Council Member) to different models.
 - **Secretary Role**: Assign a dedicated "Secretary" agent to automatically evaluate Council efficiency (Actor-Critic pattern), ensuring precise stats without burdening the Chairman.
+- **Session Persistence**: Resume your previous conversation exactly where you left off.
 - **Smart Memory**: Auto-compacting context to save tokens while keeping the conversation going.
 - **Privacy**: All keys and history are stored locally on your machine (`~/.council-ai/`).
 - **Auto-Update**: Keep your app up-to-date with a single command.
@@ -77,6 +78,7 @@ The Council is not just for chat. Agents can perform real actions on your comput
 - **Мульти-модели**: Используйте OpenAI, Anthropic, DeepSeek, xAI (Grok), Google Gemini, Perplexity и OpenRouter.
 - **Роли**: Назначайте роли (Председатель, Член Совета) разным моделям.
 - **Роль Секретаря**: Назначьте отдельного агента "Секретаря" для автоматической оценки эффективности Совета (паттерн Actor-Critic), что гарантирует точную статистику без нагрузки на Председателя.
+- **Сохранение сессии**: Возобновите разговор с того места, где остановились, при следующем запуске.
 - **Умная память**: Автоматическое сжатие контекста для экономии токенов при сохранении сути диалога.
 - **Приватность**: Все ключи и история хранятся локально на вашем компьютере (`~/.council-ai/`).
 - **Авто-обновление**: Обновление приложения одной командой.
