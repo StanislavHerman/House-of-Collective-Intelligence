@@ -364,6 +364,15 @@ export class ToolManager {
     }
   }
 
+  // Helper to parse JSON allowing comments (JSONC)
+  private parseJSON(text: string): any {
+      // Strip comments: // ... and /* ... */
+      // Be careful not to strip // inside strings
+      // Regex: Replace strings with themselves, capture comments to empty string
+      const json = text.replace(/\\"|"(?:\\"|[^"])*"|(\/\/.*|\/\*[\s\S]*?\*\/)/g, (m, c) => c ? "" : m);
+      return JSON.parse(json);
+  }
+
   async writeFile(filePath: string, content: string): Promise<ToolResult> {
     try {
       const target = this.resolvePath(filePath);
@@ -383,7 +392,7 @@ export class ToolManager {
       // Safety: Validate JSON before writing
       if (target.endsWith('.json')) {
           try {
-              JSON.parse(content);
+              this.parseJSON(content);
           } catch (e: any) {
               return { output: '', error: `Write failed: Invalid JSON content. ${e.message}` };
           }
@@ -404,6 +413,16 @@ export class ToolManager {
           // 1. Try Exact Match
           if (content.includes(search)) {
               const newContent = content.replace(search, replace);
+              
+              // Safety: Validate JSON
+              if (target.endsWith('.json')) {
+                  try {
+                      this.parseJSON(newContent);
+                  } catch (e: any) {
+                      return { output: '', error: `Edit failed: Resulting content is invalid JSON. ${e.message}` };
+                  }
+              }
+
               await fs.writeFile(target, newContent);
               return { output: `Successfully edited ${filePath} (Exact Match)` };
           }
@@ -478,7 +497,7 @@ export class ToolManager {
               // Safety: Validate JSON
               if (target.endsWith('.json')) {
                   try {
-                      JSON.parse(newContent);
+                      this.parseJSON(newContent);
                   } catch (e: any) {
                       return { output: '', error: `Edit failed: Resulting content is invalid JSON. ${e.message}` };
                   }
