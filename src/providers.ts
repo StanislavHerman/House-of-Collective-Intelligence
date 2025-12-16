@@ -63,11 +63,11 @@ function prepareMessages(
 ): { role: string, content: any[] }[] {
   // 1. Get context limit
   const modelInfo = getModelInfo(model);
-  // Default to 128k for modern models if unknown, or safe 4k fallback
-  let contextLimit = modelInfo?.context || 4096; 
+  // Default to 128k for modern models if unknown (aligns with council.ts), avoiding premature truncation
+  let contextLimit = modelInfo?.context || 128000; 
   
   // Safety margin for output tokens
-  const outputReserve = 2000;
+  const outputReserve = 4096;
   const availableContext = contextLimit - outputReserve;
 
   // 2. Prepare fixed messages (System + User Prompt)
@@ -310,7 +310,7 @@ async function sendOpenAICompatible(
           if (model.includes('o1-') || model.includes('o3-')) {
                payload.max_completion_tokens = 32768; // o1 supports large outputs
           } else {
-               payload.max_tokens = 16384; // Safe default for most modern models
+               payload.max_tokens = 4096; // Safe default matching our reserve
           }
 
           const res = await axios.post(
