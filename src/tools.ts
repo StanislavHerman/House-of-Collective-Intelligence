@@ -289,7 +289,13 @@ export class ToolManager {
 
           // 2. Try Line-by-Line Fuzzy Match (Ignore indentation/whitespace differences)
           const contentLines = content.split(/\r?\n/);
-          const searchLines = search.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+          
+          // Normalize helper: collapse internal whitespace to single space
+          const normalize = (s: string) => s.trim().replace(/\s+/g, ' ');
+          
+          const searchLines = search.split(/\r?\n/)
+              .map(l => normalize(l))
+              .filter(l => l.length > 0);
           
           if (searchLines.length === 0) {
              return { output: '', error: `Search block is empty or whitespace only.` };
@@ -301,7 +307,7 @@ export class ToolManager {
           // Scan content lines
           for (let i = 0; i < contentLines.length; i++) {
               // Optimistic check: does this line match the first search line?
-              if (contentLines[i].trim() === searchLines[0]) {
+              if (normalize(contentLines[i]) === searchLines[0]) {
                   // Potential match start. Verify subsequent lines.
                   let isMatch = true;
                   let searchIdx = 1;
@@ -313,19 +319,14 @@ export class ToolManager {
                           break;
                       }
                       
-                      // Skip empty lines in content if search block skips them? 
-                      // Or just strictly match non-empty lines?
-                      // Let's assume searchLines only contains non-empty. 
-                      // But content might have extra empty lines.
-                      // Simple approach: Strict match on non-empty lines sequence.
-                      
-                      const cLine = contentLines[contentIdx].trim();
-                      if (cLine === '') {
+                      // Skip empty lines in content if search block skips them
+                      const cLineNorm = normalize(contentLines[contentIdx]);
+                      if (cLineNorm === '') {
                           contentIdx++;
                           continue; // Skip empty lines in file
                       }
                       
-                      if (cLine !== searchLines[searchIdx]) {
+                      if (cLineNorm !== searchLines[searchIdx]) {
                           isMatch = false;
                           break;
                       }
