@@ -598,13 +598,22 @@ export class ToolManager {
               // Use git grep
               // -I: ignore binary
               // -n: line number
+              // -F: fixed string (literal)
               // --break: print empty line between matches from different files (optional)
               // --heading: print filename above matches (optional)
-              const cmd = `git grep -In "${safeQuery}" "${dirPath}" | head -n 100`;
+              // We do NOT use | head -n 100 to avoid pipe issues on Windows/shell. We limit in JS.
+              const cmd = `git grep -InF "${safeQuery}" "${dirPath}"`;
               const res = await this.runCommand(cmd);
               // Check for exit code 1 explicitly
               if (!res.error || (res.error && res.error.includes('(Exit Code: 1)'))) { 
-                  if (res.output) return res;
+                  if (res.output) {
+                      // Limit to 100 lines in JS
+                      const lines = res.output.split('\n');
+                      if (lines.length > 100) {
+                          return { output: lines.slice(0, 100).join('\n') + `\n... (${lines.length - 100} more matches truncated)` };
+                      }
+                      return res;
+                  }
                   return { output: 'No matches found (git grep).' };
               }
           }
@@ -625,12 +634,21 @@ export class ToolManager {
           // -I: ignore binary files
           // -n: line number
           // -H: print filename
-          const cmd = `grep -rInH "${safeQuery}" ${excludeArgs} "${dirPath}" | head -n 100`; 
+          // -F: fixed string (literal)
+          const cmd = `grep -rInHF "${safeQuery}" ${excludeArgs} "${dirPath}"`; 
           
           const res = await this.runCommand(cmd);
           if (res.error && res.error.includes('(Exit Code: 1)')) {
               return { output: 'No matches found.' };
           }
+          
+          if (res.output) {
+              const lines = res.output.split('\n');
+              if (lines.length > 100) {
+                  return { output: lines.slice(0, 100).join('\n') + `\n... (${lines.length - 100} more matches truncated)` };
+              }
+          }
+          
           return res;
       } catch (e: any) {
           return { output: '', error: `Search failed: ${e.message}` };
