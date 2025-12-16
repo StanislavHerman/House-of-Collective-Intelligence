@@ -742,11 +742,18 @@ export class Council {
     while ((match = dActRegex.exec(text)) !== null) {
       results.push({ type: 'desktop_act', content: match[1].trim(), arg: '' });
     }
+
+    // Debug Log found tools
+    if (results.length > 0) {
+        // console.log('[Parser] Raw tools found:', results.length);
+    }
     
     // Filter out obvious placeholders/examples
     return results.filter(r => {
         const p = (r.arg || r.content || '').toLowerCase();
+        // Check filtering
         if (p.includes('path/to/') || p.includes('/path/to') || p === 'file.txt' || p === 'example.com') {
+            console.log(`[Parser] Filtered placeholder tool: ${r.type} ${p}`);
             return false;
         }
         // Also ignore if content is purely "..." (example block)
