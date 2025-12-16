@@ -479,8 +479,29 @@ export class Council {
                 const res = await this.tools.treeView(tool.content || '.');
                 toolOutputMsg += `Tree View: ${tool.content}\nOutput:\n${res.output}\nError: ${res.error || ''}\n\n`;
             } else if (tool.type === 'search') {
-                const res = await this.tools.searchSmart(tool.content);
-                toolOutputMsg += `Smart Search: ${tool.content}\nOutput:\n${res.output}\nError: ${res.error || ''}\n\n`;
+                // Parse query and path: "query" path OR query path
+                let query = tool.content;
+                let dir = '.';
+                
+                const trimmed = tool.content.trim();
+                if (trimmed.startsWith('"') || trimmed.startsWith("'")) {
+                    const quote = trimmed[0];
+                    const endQuote = trimmed.indexOf(quote, 1);
+                    if (endQuote !== -1) {
+                        query = trimmed.substring(1, endQuote);
+                        const rest = trimmed.substring(endQuote + 1).trim();
+                        if (rest) dir = rest;
+                    }
+                } else {
+                    const firstSpace = trimmed.indexOf(' ');
+                    if (firstSpace !== -1) {
+                        query = trimmed.substring(0, firstSpace);
+                        dir = trimmed.substring(firstSpace + 1).trim();
+                    }
+                }
+
+                const res = await this.tools.searchSmart(query, dir);
+                toolOutputMsg += `Smart Search: "${query}" in "${dir}"\nOutput:\n${res.output}\nError: ${res.error || ''}\n\n`;
             } else if (tool.type === 'browser_open') {
                 const res = await this.tools.browserOpen(tool.content);
                 toolOutputMsg += `Browser Open: ${tool.content}\nContent: ${res.output.substring(0, 2000)}...\nError: ${res.error || ''}\n\n`;
