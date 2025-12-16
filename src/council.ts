@@ -338,7 +338,7 @@ export class Council {
     
     let promptSuffix = `\nДай финальный ответ и выполни действия при необходимости.`;
     if (councilMembers.length > 0) {
-        promptSuffix += ` Не забудь блок оценки в конце!`;
+        // Removed conflicting instruction about evaluation block
     }
     
     let currentPrompt = contextForChair + promptSuffix;
