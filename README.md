@@ -46,14 +46,21 @@ The Council is not just for chat. Agents can perform real actions on your comput
 
 **Windows (PowerShell):**
 1. Clone the repository.
-2. Run the installation script:
+2. Run the installation script (you might need to allow script execution):
    ```powershell
+   Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
    .\install.ps1
    ```
 3. Start the app:
    ```cmd
    .\hause.cmd
    ```
+
+#### 🔄 Updating
+The `/update` command works **only if you cloned the repository using Git**.
+If you downloaded the code as a ZIP archive:
+1. Download the new version manually.
+2. Run `npm run build` (or the install script) again.
 
 #### 📋 Commands Menu (`/`)
 - **/login**: Setup API keys for different providers.
