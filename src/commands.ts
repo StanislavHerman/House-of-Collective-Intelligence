@@ -61,10 +61,6 @@ export async function handleCommand(input: string, ctx: CommandContext): Promise
       await cmdLogin(ctx);
       return false;
     
-    case '/paste':
-    case '/edit':
-      return await cmdPaste(ctx);
-
     case '/doctor':
     case '/diag':
       await cmdDoctor(ctx);
@@ -567,21 +563,6 @@ async function cmdToggleCouncil(ctx: CommandContext) {
         } else {
             console.log(chalk.gray(`\n  ${t('council_off')}\n`));
         }
-    }
-}
-
-async function cmdPaste(ctx: CommandContext): Promise<string | boolean> {
-    console.log(chalk.gray(`\n  📝 ${t('paste_editor_opening')}`));
-    
-    // Use new inline multiline reader
-    const content = await ui.readMultiline(chalk.cyan('Paste Mode (Inline)'));
-    
-    if (content) {
-        console.log(chalk.green(`  ✓ ${t('paste_loaded')} (${content.length} chars)\n`));
-        return content;
-    } else {
-        console.log(chalk.yellow(`  ⚠️ ${t('paste_empty')}\n`));
-        return false;
     }
 }
 
