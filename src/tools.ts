@@ -428,13 +428,42 @@ export class ToolManager {
 
   async searchSmart(query: string, dirPath: string = '.'): Promise<ToolResult> {
       try {
-          // Use git grep if available (fastest), fallback to find+grep
-          // We'll use a recursive grep via runCommand logic but simplified
-          // grep -rIn "query" --exclude-dir={node_modules,.git,dist} .
+          const safeQuery = query.replace(/"/g, '\\"');
           
-          // Construct explicit exclude arguments for standard grep
-          const excludes = `--exclude-dir=node_modules --exclude-dir=.git --exclude-dir=dist --exclude-dir=build --exclude-dir=coverage`;
-          const cmd = `grep -rIn "${query.replace(/"/g, '\\"')}" ${excludes} "${dirPath}" | head -n 100`; // Limit to 100 matches
+          // 1. Try git grep first (It's lightning fast and respects .gitignore)
+          // We check if we are in a git repo first
+          const gitCheck = await this.runCommand('git rev-parse --is-inside-work-tree');
+          if (!gitCheck.error && gitCheck.output.trim() === 'true') {
+              // Use git grep
+              // -I: ignore binary
+              // -n: line number
+              // --break: print empty line between matches from different files (optional)
+              // --heading: print filename above matches (optional)
+              const cmd = `git grep -In "${safeQuery}" "${dirPath}" | head -n 100`;
+              const res = await this.runCommand(cmd);
+              if (!res.error || (res.error && !res.error.includes('exit code 1'))) { // exit code 1 means no matches
+                  if (res.output) return res;
+                  return { output: 'No matches found (git grep).' };
+              }
+          }
+
+          // 2. Fallback to standard grep with heavy excludes
+          // Common heavy folders to ignore
+          const ignoreDirs = [
+              'node_modules', '.git', '.svn', '.hg',
+              'dist', 'build', 'out', 'target', 'bin', 'obj',
+              'coverage', '.cache', '.npm', '.yarn', '.pnpm',
+              'Library', 'Applications', 'System', 'tmp', 'temp',
+              'vendor', 'venv', '.env', '.venv', 'env'
+          ];
+          
+          const excludeArgs = ignoreDirs.map(d => `--exclude-dir="${d}"`).join(' ');
+          
+          // -r: recursive
+          // -I: ignore binary files
+          // -n: line number
+          // -H: print filename
+          const cmd = `grep -rInH "${safeQuery}" ${excludeArgs} "${dirPath}" | head -n 100`; 
           
           const res = await this.runCommand(cmd);
           if (res.error && res.error.includes('exit code 1')) {
