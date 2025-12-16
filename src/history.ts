@@ -26,8 +26,12 @@ export class HistoryManager {
 
   private save() {
     const tempFile = HISTORY_FILE + '.tmp';
-    fs.mkdirSync(CONFIG_DIR, { recursive: true });
-    fs.writeFileSync(tempFile, JSON.stringify(this.messages, null, 2));
+    // Secure directory: 700
+    if (!fs.existsSync(CONFIG_DIR)) {
+        fs.mkdirSync(CONFIG_DIR, { recursive: true, mode: 0o700 });
+    }
+    // Secure file: 600
+    fs.writeFileSync(tempFile, JSON.stringify(this.messages, null, 2), { mode: 0o600 });
     fs.renameSync(tempFile, HISTORY_FILE);
   }
 
