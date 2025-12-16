@@ -430,6 +430,16 @@ export class Council {
                 if (onProgress) onProgress({ type: 'error', message: 'Permission denied (edit)' });
                 continue;
             }
+            if (tool.type === 'system_diagnostics' && !perms.allow_command) {
+                toolOutputMsg += `System Diagnostics\nError: Permission denied. User has disabled terminal commands in /settings.\n\n`;
+                if (onProgress) onProgress({ type: 'error', message: 'Permission denied (diagnostics)' });
+                continue;
+            }
+            if (tool.type === 'ios_config' && !perms.allow_file_edit) {
+                toolOutputMsg += `iOS Config: ${tool.content}\nError: Permission denied. User has disabled file editing in /settings.\n\n`;
+                if (onProgress) onProgress({ type: 'error', message: 'Permission denied (ios_config)' });
+                continue;
+            }
 
             if (tool.type === 'command') {
                 const res = await this.tools.runCommand(tool.content, signal);

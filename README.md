@@ -30,6 +30,8 @@ The Council is not just for chat. Agents can perform real actions on your comput
 *You can enable/disable these permissions anytime using the `/settings` command.*
 
 #### 🚀 Installation
+
+**macOS / Linux:**
 1. Clone the repository.
 2. Run the installation script:
    ```bash
@@ -38,6 +40,18 @@ The Council is not just for chat. Agents can perform real actions on your comput
 3. Start the app:
    ```bash
    ./hause
+   # Or run manually: npm start
+   ```
+
+**Windows (PowerShell):**
+1. Clone the repository.
+2. Run the installation script:
+   ```powershell
+   .\install.ps1
+   ```
+3. Start the app:
+   ```cmd
+   .\hause.cmd
    ```
 
 #### 📋 Commands Menu (`/`)
