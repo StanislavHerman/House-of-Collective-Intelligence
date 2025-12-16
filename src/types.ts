@@ -54,3 +54,11 @@ export interface ProviderResponse {
   reasoning?: string;
   error?: string;
 }
+
+export type CouncilEventType = 'step' | 'tool_start' | 'tool_result' | 'agent_thinking' | 'agent_response' | 'info' | 'error' | 'success';
+
+export interface CouncilEvent {
+  type: CouncilEventType;
+  message?: string;
+  payload?: any;
+}

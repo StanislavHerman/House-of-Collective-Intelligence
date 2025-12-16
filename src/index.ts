@@ -15,6 +15,8 @@ import path from 'node:path';
 import fs from 'node:fs';
 import os from 'node:os';
 import { fileURLToPath } from 'node:url';
+import { logger } from './logger.js';
+import { CouncilEvent } from './types.js';
 
 const execAsync = util.promisify(exec);
 
@@ -225,52 +227,72 @@ function printStatus(config: ConfigManager) {
 async function askCouncil(question: string, council: Council, config: ConfigManager, signal?: AbortSignal) {
   console.log('');
   
-  const spinner = ora({
-      text: t('thinking'),
-      color: 'cyan'
-  }).start();
-
   try {
-    const result = await council.ask(question, (msg) => {
-      spinner.text = msg;
-    }, signal, (res) => {
-        // Callback for individual council responses
-        if (config.getMuteMode()) return; // В тихом режиме не выводим ответы Совета
+    const result = await council.ask(question, (event: CouncilEvent) => {
+        if (config.getMuteMode()) return;
 
-        // Stop spinner to print council response clean
-        spinner.stop();
+        switch (event.type) {
+            case 'step':
+                logger.step(event.message || '');
+                break;
+            case 'tool_start':
+                if (event.payload) {
+                    logger.action(event.payload.tool, event.payload.input);
+                }
+                break;
+            case 'tool_result':
+                // Optional: log result success/fail if needed
+                break;
+            case 'agent_thinking':
+                if (event.payload) {
+                    const { agent, estimatedTokens } = event.payload;
+                    logger.subAction(`${agent.name} (${agent.model}): ${t('thinking')} (~${Math.round(estimatedTokens/1000)}k tok)`);
+                }
+                break;
+            case 'agent_response':
+                if (event.payload) {
+                    const { agent, duration } = event.payload;
+                    logger.subAction(`${agent.name} (${agent.model}): ${t('answer_received')} (${duration}s)`);
+                }
+                break;
+            case 'info':
+                logger.info(event.message || '');
+                break;
+            case 'error':
+                logger.error(event.message || '');
+                break;
+            case 'success':
+                logger.success(event.message || '');
+                break;
+        }
+    }, signal, (res) => {
+        // Callback for individual council responses (Detailed View)
+        if (config.getMuteMode()) return;
 
         if (!res.error) {
             const agent = config.getAgent(res.providerId);
             const name = agent ? agent.name : res.providerId;
             const model = agent ? agent.model : res.model;
             
-            console.log(chalk.gray(`\n  ┌── [${name}] (${model})`));
+            logger.agent(name, model);
             
             // Display reasoning for council members if available
             if (res.reasoning) {
-                console.log(chalk.gray(`  │`));
-                console.log(chalk.gray(`  │  💭 ${t('reasoning') || 'Reasoning'}:`));
-                // Indent and dim the reasoning
+                logger.agentLine(`💭 ${t('reasoning') || 'Reasoning'}:`);
                 res.reasoning.split('\n').forEach(line => {
-                    console.log(chalk.gray(`  │    ${chalk.italic(line)}`));
+                    logger.agentLine(`  ${chalk.italic(line)}`);
                 });
             }
 
-            console.log(chalk.gray(`  │`));
-            console.log(chalk.gray(res.text.split('\n').map(l => `  │ ${l}`).join('\n')));
-            console.log(chalk.gray(`  └──────────────────────────────────────────`));
+            logger.agentLine('');
+            res.text.split('\n').forEach(l => logger.agentLine(l));
+            logger.agentEnd();
         } else {
             const agent = config.getAgent(res.providerId);
             const name = agent ? agent.name : res.providerId;
-            console.log(chalk.red(`\n  [${name}] ✗ ${t('error')}: ${res.error}`));
+            logger.error(`[${name}] ${t('error')}: ${res.error}`);
         }
-        
-        // Resume spinner
-        spinner.start(t('thinking'));
     });
-
-    spinner.stop();
 
     // Председатель
     console.log(chalk.cyan(`\n  ${t('status_chair')}`));
@@ -288,7 +310,7 @@ async function askCouncil(question: string, council: Council, config: ConfigMana
       console.log(chalk.red(`  ✗ ${t('error')}: ${result.chairResponse.error}`));
     }
   } catch (err: any) {
-      spinner.fail(t('error'));
+      logger.error(`${t('error')}: ${err.message}`);
       throw err;
   }
 

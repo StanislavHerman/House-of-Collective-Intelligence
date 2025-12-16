@@ -5,7 +5,7 @@ import os from 'node:os';
 import { ConfigManager } from './config.js';
 import { HistoryManager } from './history.js';
 import { sendToProvider, estimateTokens } from './providers.js';
-import { ProviderResponse, AgentConfig, AgentStats } from './types.js';
+import { ProviderResponse, AgentConfig, AgentStats, CouncilEvent } from './types.js';
 import { ToolManager, TOOLS_DEF } from './tools.js';
 import { MODEL_PRICING, getModelInfo } from './pricing.js';
 import { t } from './i18n.js';
@@ -27,7 +27,9 @@ export class Council {
       this.loadStats();
   }
 
-  private loadStats() {
+// ... methods ...
+
+  public loadStats() {
       try {
           if (fs.existsSync(this.statsFile)) {
               const data = fs.readFileSync(this.statsFile, 'utf8');
@@ -38,7 +40,7 @@ export class Council {
       }
   }
 
-  private saveStats() {
+  public saveStats() {
       try {
           const dir = path.dirname(this.statsFile);
           if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
@@ -48,20 +50,20 @@ export class Council {
       }
   }
 
-  async cleanup() {
+  public async cleanup() {
       await this.tools.close();
   }
 
-  async runDiagnostics() {
+  public async runDiagnostics() {
       return await this.tools.runDiagnostics();
   }
 
-  resetStats() {
+  public resetStats() {
       this.stats = {};
       this.saveStats();
   }
 
-  getStats(agentId: string): AgentStats {
+  public getStats(agentId: string): AgentStats {
       if (!this.stats[agentId]) {
           this.stats[agentId] = {
               totalSuggestions: 0,
@@ -73,7 +75,7 @@ export class Council {
       return this.stats[agentId];
   }
 
-  updateAgentStats(agentId: string, result: 'accepted' | 'partial' | 'rejected') {
+  public updateAgentStats(agentId: string, result: 'accepted' | 'partial' | 'rejected') {
       const s = this.getStats(agentId);
       s.totalSuggestions++;
       if (result === 'accepted') s.acceptedSuggestions++;
@@ -82,22 +84,16 @@ export class Council {
       this.saveStats();
   }
 
-  getGlobalEfficiency(): number {
-      let total = 0;
-      let score = 0;
-      
-      Object.values(this.stats).forEach(s => {
-          total += s.totalSuggestions;
-          score += s.acceptedSuggestions + (s.partiallyAcceptedSuggestions * 0.5);
-      });
-      
-      if (total === 0) return 100; // Default happy
-      return Math.round((score / total) * 100);
+  public getGlobalEfficiency(): number {
+      const s = Object.values(this.stats);
+      const totalSuggestions = s.reduce((acc, curr) => acc + curr.totalSuggestions, 0);
+      const acceptedSuggestions = s.reduce((acc, curr) => acc + curr.acceptedSuggestions, 0);
+      return totalSuggestions > 0 ? (acceptedSuggestions / totalSuggestions) * 100 : 0;
   }
 
   async ask(
     question: string, 
-    onProgress?: (msg: string) => void, 
+    onProgress?: (event: CouncilEvent) => void, 
     signal?: AbortSignal,
     onCouncilResponse?: (res: ProviderResponse) => void
   ): Promise<AskResult> {
@@ -159,8 +155,10 @@ export class Council {
 
             this.history.compact(keepCount);
             if (onProgress) {
-                onProgress(`${t('compact_auto')} [${chairAgent.model} / Limit: ${contextLimit}]`);
-                onProgress(`Tokens: ${totalTokens} -> ~${remainingTokens}. Msgs: ${msgs.length} -> ${keepCount} (Removed ${msgs.length - keepCount})`);
+                onProgress({ 
+                    type: 'info', 
+                    message: `${t('compact_auto')} [${chairAgent.model}] (${totalTokens} -> ${remainingTokens})` 
+                });
             }
         }
     }
@@ -279,7 +277,9 @@ export class Council {
     const CHAIR_SYSTEM_PROMPT = chairSystemPromptText + `\n\n${TOOLS_DEF}\n\nФОРМАТ ВЫЗОВА ИНСТРУМЕНТОВ (строго соблюдай MARKDOWN блоки):\n   \n   1. Выполнить команду (bash):\n   \`\`\`bash\n   команда\n   \`\`\`\n   \n   2. Создать/записать файл:\n   \`\`\`file:путь/к/файлу\n   содержимое файла\n   \`\`\`\n   \n   3. Прочитать файл:\n   \`\`\`read:путь/к/файлу\`\`\`\n\n   4. Браузер (Интернет + Зрение):\n   \`\`\`browser:open url\`\`\`\n   \`\`\`browser:search query\`\`\`\n   \`\`\`browser:act action\`\`\`\n\n   5. Экран (macOS):\n   \`\`\`desktop:screenshot path.png\`\`\`\n   \`\`\`desktop:act action\`\`\`\n`;
 
     // 1. Опрашиваем Совет
-    if (onProgress && councilMembers.length > 0) onProgress(`${t('council_asking')} (${councilMembers.length})...`);
+    if (onProgress && councilMembers.length > 0) {
+        onProgress({ type: 'step', message: `${t('council_asking')} (${councilMembers.length})...` });
+    }
     
     let councilResponses: ProviderResponse[] = [];
     if (councilMembers.length > 0) {
@@ -294,13 +294,13 @@ export class Council {
               let estimatedTokens = estimateTokens(identityPrompt) + estimateTokens(question);
               for (const m of historyWithoutCurrent) estimatedTokens += estimateTokens(m.text) + (m.images?.length || 0) * 1000;
 
-              if (onProgress) onProgress(`${agent.name} (${agent.model}): ${t('thinking')} (~${Math.round(estimatedTokens/1000)}k tok)`);
+              if (onProgress) onProgress({ type: 'agent_thinking', payload: { agent, estimatedTokens } });
               
               const startT = Date.now();
               const response = await sendToProvider(agent, apiKey || '', question, historyWithoutCurrent, identityPrompt, signal);
               const duration = ((Date.now() - startT) / 1000).toFixed(1);
               
-              if (onProgress) onProgress(`${agent.name} (${agent.model}): ${t('answer_received')} (${duration}s)`);
+              if (onProgress) onProgress({ type: 'agent_response', payload: { agent, duration } });
               if (onCouncilResponse) onCouncilResponse(response);
               return response;
             });
@@ -331,7 +331,7 @@ export class Council {
       contextForChair += `---------------------\nИспользуй эти мнения для принятия решения. Ты не обязан соглашаться со всеми, но должен учитывать их экспертизу.\nТвоя задача — синтезировать ответ. Ссылайся на конкретных агентов, если используешь их идеи (например, "Как заметил Claude...").\n`;
     }
     
-    if (onProgress) onProgress(`${t('chair_analyzing')} (${chairAgent.name})`);
+    if (onProgress) onProgress({ type: 'step', message: `${t('chair_analyzing')} (${chairAgent.name})` });
     
     let promptSuffix = `\nДай финальный ответ и выполни действия при необходимости.`;
     if (councilMembers.length > 0) {
@@ -351,15 +351,6 @@ export class Council {
         
         const chairApiKey = this.config.getApiKey(chairAgent.providerType);
         
-        // Fix duplication: 
-        // If turn == 0, the last message in history is the raw User Question. 
-        // The 'currentPrompt' contains the User Question + Council Advice. 
-        // So we slice history to avoid [User: Q, User: Q+Advice].
-        //
-        // If turn > 0, the last message is Tool Output. 
-        // The 'currentPrompt' is "Continue". 
-        // We MUST send the Tool Output, so we do NOT slice.
-        // Use CLEANED history to prevent pattern matching of "Efficiency" blocks
         let historyForRequest = this.getCleanHistory();
         
         if (turn === 0) {
@@ -388,7 +379,7 @@ export class Council {
         const currentImages: string[] = []; // Collect images from this turn
         const perms = this.config.getPermissions();
         
-        if (onProgress) onProgress(`${t('tool_executing')} (${toolsToRun.length})...`);
+        if (onProgress) onProgress({ type: 'step', message: t('tool_executing'), payload: { count: toolsToRun.length } });
         
         for (const tool of toolsToRun) {
             // Log specific tool action
@@ -405,32 +396,38 @@ export class Council {
                 if (tool.type === 'desktop_act') toolName = t('tool_desktop_act');
 
                 const displayArg = toolArg.length > 50 ? toolArg.substring(0, 47) + '...' : toolArg;
-                onProgress(`${toolName}: ${displayArg}`);
+                onProgress({ type: 'tool_start', payload: { tool: toolName, input: displayArg } });
             }
 
             // Check Permissions
             if (tool.type === 'command' && !perms.allow_command) {
                 toolOutputMsg += `Command: ${tool.content}\nError: Permission denied. User has disabled terminal commands in /settings.\n\n`;
+                if (onProgress) onProgress({ type: 'error', message: 'Permission denied (command)' });
                 continue;
             }
             if (tool.type === 'file' && !perms.allow_file_write) {
                 toolOutputMsg += `Write File: ${tool.arg}\nError: Permission denied. User has disabled file writing in /settings.\n\n`;
+                if (onProgress) onProgress({ type: 'error', message: 'Permission denied (write)' });
                 continue;
             }
             if (tool.type === 'read' && !perms.allow_file_read) {
                 toolOutputMsg += `Read File: ${tool.content}\nError: Permission denied. User has disabled file reading in /settings.\n\n`;
+                if (onProgress) onProgress({ type: 'error', message: 'Permission denied (read)' });
                 continue;
             }
             if ((tool.type === 'browser_open' || tool.type === 'browser_search' || tool.type === 'browser_act') && !perms.allow_browser) {
                 toolOutputMsg += `${tool.type}: ${tool.content}\nError: Permission denied. User has disabled browser access in /settings.\n\n`;
+                if (onProgress) onProgress({ type: 'error', message: 'Permission denied (browser)' });
                 continue;
             }
             if ((tool.type === 'desktop_screenshot' || tool.type === 'desktop_act') && !perms.allow_desktop) {
                 toolOutputMsg += `${tool.type}: ${tool.content}\nError: Permission denied. User has disabled desktop control in /settings.\n\n`;
+                if (onProgress) onProgress({ type: 'error', message: 'Permission denied (desktop)' });
                 continue;
             }
             if (tool.type === 'edit' && !perms.allow_file_edit) {
                 toolOutputMsg += `Edit File: ${tool.arg}\nError: Permission denied. User has disabled file editing in /settings.\n\n`;
+                if (onProgress) onProgress({ type: 'error', message: 'Permission denied (edit)' });
                 continue;
             }
 
@@ -584,12 +581,12 @@ export class Council {
       question: string, 
       councilResponses: ProviderResponse[], 
       chairAnswer: string,
-      onProgress?: (msg: string) => void
+      onProgress?: (event: CouncilEvent) => void
   ) {
       const secretary = this.config.getAgent(secretaryId);
       if (!secretary) return;
 
-      if (onProgress) onProgress(`📝 ${t('status_secretary')} analyzing efficiency...`);
+      if (onProgress) onProgress({ type: 'info', message: `📝 ${t('status_secretary')} analyzing efficiency...` });
 
       const apiKey = this.config.getApiKey(secretary.providerType);
       const chairId = this.config.getChairId();
@@ -631,7 +628,7 @@ export class Council {
           // Silently updated stats (User requested no output in chat)
           
       } catch (e: any) {
-          if (onProgress) onProgress(`⚠️ Secretary error: ${e.message}`);
+          if (onProgress) onProgress({ type: 'error', message: `⚠️ Secretary error: ${e.message}` });
       }
   }
 
