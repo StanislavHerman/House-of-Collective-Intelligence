@@ -655,14 +655,14 @@ export class Council {
     
     // Regex для bash (command)
     // Allow ```bash or ```sh or just ```command
-    const cmdRegex = /```(?:bash|sh|zsh|command)\s*([\s\S]*?)\s*```/g;
+    const cmdRegex = /```(?:bash|sh|zsh|command)\s*([\s\S]*?)\s*```/gi;
     let match;
     while ((match = cmdRegex.exec(text)) !== null) {
       results.push({ type: 'command', content: match[1].trim(), arg: '' });
     }
 
     // Regex для system_diagnostics
-    const sysDiagRegex = /```system_diagnostics\s*```/g;
+    const sysDiagRegex = /```system_diagnostics\s*```/gi;
     while ((match = sysDiagRegex.exec(text)) !== null) {
         results.push({ type: 'system_diagnostics', content: '', arg: '' });
     }
@@ -670,21 +670,21 @@ export class Council {
     // Regex для edit:path
     // Allow: edit: path OR edit path
     // Force greedy match (.*) for path
-    const editRegex = /```\s*edit[:\s]\s*(.*)\s*([\s\S]*?)\s*```/g;
+    const editRegex = /```\s*edit[:\s]\s*(.*)\s*([\s\S]*?)\s*```/gi;
     while ((match = editRegex.exec(text)) !== null) {
         results.push({ type: 'edit', arg: match[1].trim(), content: match[2].trim() });
     }
 
     // Regex для tree:path
     // Allow: tree: path OR tree path OR tree\npath
-    const treeRegex = /```tree[:\s]?\s*([\s\S]*?)\s*```/g;
+    const treeRegex = /```tree[:\s]?\s*([\s\S]*?)\s*```/gi;
     while ((match = treeRegex.exec(text)) !== null) {
         const content = match[1].trim();
         if (content) results.push({ type: 'tree', content, arg: '' });
     }
 
     // Regex для search:query
-    const searchRegex = /```search[:\s]?\s*([\s\S]*?)\s*```/g;
+    const searchRegex = /```search[:\s]?\s*([\s\S]*?)\s*```/gi;
     while ((match = searchRegex.exec(text)) !== null) {
         const content = match[1].trim();
         if (content) results.push({ type: 'search', content, arg: '' });
@@ -692,48 +692,58 @@ export class Council {
 
     // Regex для file:path
     // Force greedy match (.*) for path to prevent content group from eating it
-    const fileRegex = /```\s*file[:\s]\s*(.*)\s*([\s\S]*?)\s*```/g;
+    const fileRegex = /```\s*file[:\s]\s*(.*)\s*([\s\S]*?)\s*```/gi;
     while ((match = fileRegex.exec(text)) !== null) {
       results.push({ type: 'file', arg: match[1].trim(), content: match[2].trim() });
     }
     
     // Regex для read:path
-    const readRegex = /```read[:\s]?\s*([\s\S]*?)\s*```/g;
+    const readRegex = /```read[:\s]?\s*([\s\S]*?)\s*```/gi;
     while ((match = readRegex.exec(text)) !== null) {
       const content = match[1].trim();
       if (content) results.push({ type: 'read', content, arg: '' });
     }
     
     // Regex для browser:open
-    const bOpenRegex = /```browser:open[:\s]?\s*([\s\S]*?)\s*```/g;
+    const bOpenRegex = /```browser:open[:\s]?\s*([\s\S]*?)\s*```/gi;
     while ((match = bOpenRegex.exec(text)) !== null) {
       results.push({ type: 'browser_open', content: match[1].trim(), arg: '' });
     }
 
     // Regex для browser:act
-    const bActRegex = /```browser:act\s*([\s\S]*?)\s*```/g;
+    const bActRegex = /```browser:act\s*([\s\S]*?)\s*```/gi;
     while ((match = bActRegex.exec(text)) !== null) {
       results.push({ type: 'browser_act', content: match[1].trim(), arg: '' });
     }
     
     // Regex для browser:search
-    const bSearchRegex = /```browser:search\s*(.*?)\s*```/g;
+    const bSearchRegex = /```browser:search\s*(.*?)\s*```/gi;
     while ((match = bSearchRegex.exec(text)) !== null) {
       results.push({ type: 'browser_search', content: match[1].trim(), arg: '' });
     }
     
     // Regex for desktop:screenshot
-    const dShotRegex = /```desktop:screenshot\s*(.*?)\s*```/g;
+    const dShotRegex = /```desktop:screenshot\s*(.*?)\s*```/gi;
     while ((match = dShotRegex.exec(text)) !== null) {
       results.push({ type: 'desktop_screenshot', content: match[1].trim(), arg: '' });
     }
 
     // Regex for desktop:act
-    const dActRegex = /```desktop:act\s*([\s\S]*?)\s*```/g;
+    const dActRegex = /```desktop:act\s*([\s\S]*?)\s*```/gi;
     while ((match = dActRegex.exec(text)) !== null) {
       results.push({ type: 'desktop_act', content: match[1].trim(), arg: '' });
     }
     
-    return results;
+    // Filter out obvious placeholders/examples
+    return results.filter(r => {
+        const p = (r.arg || r.content || '').toLowerCase();
+        if (p.includes('path/to/') || p.includes('/path/to') || p === 'file.txt' || p === 'example.com') {
+            return false;
+        }
+        // Also ignore if content is purely "..." (example block)
+        if (r.content.trim() === '...') return false;
+        
+        return true;
+    });
   }
 }
