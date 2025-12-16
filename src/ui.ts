@@ -34,6 +34,9 @@ function setupInputProxy() {
 
     // Handle Real Input
     process.stdin.on('data', (chunk: Buffer) => {
+        // Ensure flow
+        if (process.stdin.isPaused()) process.stdin.resume();
+
         const str = chunk.toString();
 
         // 1. Bracketed Paste Start
@@ -105,6 +108,9 @@ export function initReadline() {
   if (rl) return;
   
   const input = setupInputProxy();
+
+  // Ensure stdin is flowing (Critical fix for freeze)
+  process.stdin.resume();
 
   rl = createInterface({
     input: input as any, // TS Cast as generic Readable
