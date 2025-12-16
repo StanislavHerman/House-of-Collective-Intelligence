@@ -51,12 +51,12 @@ async function main() {
       ]);
       
       if (choice === 'yes') {
-          // Already loaded
+          // Already loaded. Keep stats as is (loaded in Council constructor).
           console.log(chalk.green(`  ${t('history_loaded')}\n`));
       } else {
           // Clear
           history.clear();
-          council.resetStats(); // Also reset stats if starting fresh
+          council.resetStats(); // Start fresh
           console.log(chalk.green(`  ${t('new_chat')}\n`));
       }
   } else {
