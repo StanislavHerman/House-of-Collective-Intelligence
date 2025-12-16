@@ -6,7 +6,7 @@ Efficiency % = ( (Accepted_Count + (Partial_Count * 0.5)) / Total_Suggestions ) 
 - Partially Accepted Suggestion: 0.5 points
 - Rejected Suggestion: 0 points
 
-Stats are tracked in-memory within the Council class and are reset:
-1. When the application is restarted.
-2. When the user issues the `/new` command.
-Stats are NOT persisted to disk.
+Stats are tracked in-memory within the Council class and are persisted to disk:
+1. File: `~/.council-ai/stats.json` (protected with 0600 permissions).
+2. Stats are loaded on startup, so efficiency data is preserved across sessions.
+3. Stats are reset only when the user explicitly issues the `/new` command or clears history.
