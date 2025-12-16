@@ -179,7 +179,7 @@ function printStatus(config: ConfigManager) {
   }
 
   // Совет
-  const active = agents.filter(a => a.enabled && a.id !== chairId);
+  const active = agents.filter(a => a.enabled && a.id !== chairId && a.id !== secretaryId);
   if (active.length > 0) {
     console.log(chalk.cyan(`  ${t('status_council')}:`));
     active.forEach(a => {
