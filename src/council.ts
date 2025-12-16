@@ -167,64 +167,67 @@ export class Council {
     const imageExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.webp'];
     const detectedImages: string[] = [];
     
-    // Helper to try load image
-    const tryLoadImage = (p: string): string | null => {
-        try {
-            // Handle ~ expansion
-            if (p.startsWith('~/')) {
-                p = path.join(os.homedir(), p.slice(2));
-            }
-            
-            // Handle escaped spaces (terminal drag & drop often escapes spaces)
-            // But only if the file doesn't exist as is (some paths might actually have backslashes?)
-            // Usually terminal produces "path\ to\ file.png".
-            // We can try both.
-            
-            let targetPath = p;
-            if (!fs.existsSync(targetPath)) {
-                const unescaped = p.replace(/\\ /g, ' ');
-                if (fs.existsSync(unescaped)) targetPath = unescaped;
-            }
-
-            if (fs.existsSync(targetPath)) {
-                const stat = fs.statSync(targetPath);
-                if (stat.isFile() && imageExtensions.includes(path.extname(targetPath).toLowerCase())) {
-                    const bitmap = fs.readFileSync(targetPath);
-                    return bitmap.toString('base64');
+    // Check permissions for implicit image loading
+    if (this.config.getPermissions().allow_file_read) {
+        // Helper to try load image
+        const tryLoadImage = (p: string): string | null => {
+            try {
+                // Handle ~ expansion
+                if (p.startsWith('~/')) {
+                    p = path.join(os.homedir(), p.slice(2));
                 }
-            }
-        } catch (e) {
-            // ignore
-        }
-        return null;
-    };
+                
+                // Handle escaped spaces (terminal drag & drop often escapes spaces)
+                // But only if the file doesn't exist as is (some paths might actually have backslashes?)
+                // Usually terminal produces "path\ to\ file.png".
+                // We can try both.
+                
+                let targetPath = p;
+                if (!fs.existsSync(targetPath)) {
+                    const unescaped = p.replace(/\\ /g, ' ');
+                    if (fs.existsSync(unescaped)) targetPath = unescaped;
+                }
 
-    // 1. Check strict path (entire trimmed input)
-    let potentialPath = question.trim();
-    // Remove wrapping quotes if present
-    if ((potentialPath.startsWith('"') && potentialPath.endsWith('"')) || 
-        (potentialPath.startsWith("'") && potentialPath.endsWith("'"))) {
-        potentialPath = potentialPath.slice(1, -1);
-    }
-    
-    const imgFromFull = tryLoadImage(potentialPath);
-    if (imgFromFull) {
-        detectedImages.push(imgFromFull);
-    } else {
-        // 2. Scan for paths in text
-        // Look for typical file paths
-        // Regex for absolute paths or paths starting with ~
-        // We match non-whitespace chars, allowing escaped spaces
-        // This is tricky regex.
-        // Let's try simpler: split by quotes or assume paths are clearly delimited.
+                if (fs.existsSync(targetPath)) {
+                    const stat = fs.statSync(targetPath);
+                    if (stat.isFile() && imageExtensions.includes(path.extname(targetPath).toLowerCase())) {
+                        const bitmap = fs.readFileSync(targetPath);
+                        return bitmap.toString('base64');
+                    }
+                }
+            } catch (e) {
+                // ignore
+            }
+            return null;
+        };
+
+        // 1. Check strict path (entire trimmed input)
+        let potentialPath = question.trim();
+        // Remove wrapping quotes if present
+        if ((potentialPath.startsWith('"') && potentialPath.endsWith('"')) || 
+            (potentialPath.startsWith("'") && potentialPath.endsWith("'"))) {
+            potentialPath = potentialPath.slice(1, -1);
+        }
         
-        // Naive regex for paths ending in extensions
-        const regex = /(?:^|\s)(['"]?)((\/|~)[^\n\r]*?\.(?:png|jpg|jpeg|gif|webp))\1/gi;
-        let match;
-        while ((match = regex.exec(question)) !== null) {
-             const capturedPath = match[2];
-             const img = tryLoadImage(capturedPath.trim());
-             if (img) detectedImages.push(img);
+        const imgFromFull = tryLoadImage(potentialPath);
+        if (imgFromFull) {
+            detectedImages.push(imgFromFull);
+        } else {
+            // 2. Scan for paths in text
+            // Look for typical file paths
+            // Regex for absolute paths or paths starting with ~
+            // We match non-whitespace chars, allowing escaped spaces
+            // This is tricky regex.
+            // Let's try simpler: split by quotes or assume paths are clearly delimited.
+            
+            // Naive regex for paths ending in extensions
+            const regex = /(?:^|\s)(['"]?)((\/|~)[^\n\r]*?\.(?:png|jpg|jpeg|gif|webp))\1/gi;
+            let match;
+            while ((match = regex.exec(question)) !== null) {
+                 const capturedPath = match[2];
+                 const img = tryLoadImage(capturedPath.trim());
+                 if (img) detectedImages.push(img);
+            }
         }
     }
 
