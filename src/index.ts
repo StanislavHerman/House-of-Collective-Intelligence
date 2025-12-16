@@ -37,8 +37,32 @@ async function main() {
 
   const council = new Council(config, history);
   
-  // Reset stats on startup (new session)
-  council.resetStats();
+  // Check for previous session (History Persistence)
+  // We check if history has messages. Since history is NOT loaded by default in constructor anymore (or load is empty),
+  // we need to peek or try loading. Actually, HistoryManager constructor does NOT load now.
+  // We can call load() and see if it has messages.
+  history.load(); 
+  const hasHistory = history.getMessages().length > 0;
+  
+  if (hasHistory) {
+      const choice = await ui.select(t('resume_session_title'), [
+          { label: t('resume_session_yes'), value: 'yes' },
+          { label: t('resume_session_no'), value: 'no' }
+      ]);
+      
+      if (choice === 'yes') {
+          // Already loaded
+          console.log(chalk.green(`  ${t('history_loaded')}\n`));
+      } else {
+          // Clear
+          history.clear();
+          council.resetStats(); // Also reset stats if starting fresh
+          console.log(chalk.green(`  ${t('new_chat')}\n`));
+      }
+  } else {
+      // No history, ensure stats are reset for clean start
+      council.resetStats();
+  }
   
   const ctx = { config, history, council };
 

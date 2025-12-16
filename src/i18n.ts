@@ -25,6 +25,11 @@ export const I18N: Record<Language, Record<string, string>> = {
     'update_error': 'Ошибка обновления',
     'update_no_git': 'Невозможно обновить: это не git-репозиторий',
     'update_git_hint': 'Чтобы работало авто-обновление, удалите папку и скачайте проект через "git clone ..."',
+    'resume_session_title': 'НАЙДЕНА ПРЕДЫДУЩАЯ СЕССИЯ',
+    'resume_session_desc': 'Хотите загрузить историю сообщений?',
+    'resume_session_yes': 'Да, загрузить историю',
+    'resume_session_no': 'Нет, начать с нуля',
+    'history_loaded': '✓ История загружена',
     
     // Settings
     'settings_title': 'НАСТРОЙКИ ДОСТУПА',
@@ -203,6 +208,11 @@ export const I18N: Record<Language, Record<string, string>> = {
     'doctor_running': 'Running system diagnostics...',
     'doctor_error': 'Diagnostic error',
     'doctor_failed': 'Failed to run diagnostics',
+    'resume_session_title': 'PREVIOUS SESSION FOUND',
+    'resume_session_desc': 'Do you want to load message history?',
+    'resume_session_yes': 'Yes, load history',
+    'resume_session_no': 'No, start fresh',
+    'history_loaded': '✓ History loaded',
     'settings_title': 'ACCESS SETTINGS',
     'settings_desc': 'Enable or disable agent capabilities:',
     'perm_browser': 'Browser (Internet)',

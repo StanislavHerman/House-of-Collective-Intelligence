@@ -15,7 +15,7 @@ export class HistoryManager {
     // this.load();
   }
 
-  private load() {
+  public load() {
     try {
       const raw = fs.readFileSync(HISTORY_FILE, 'utf8');
       this.messages = JSON.parse(raw);
