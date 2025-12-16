@@ -562,16 +562,16 @@ async function cmdToggleCouncil(ctx: CommandContext) {
 
 async function cmdDoctor(ctx: CommandContext) {
     console.log(chalk.cyan(`\n  🏥 ${t('cmd_doctor')}\n`));
-    console.log(chalk.gray(`  Running system diagnostics...`));
+    console.log(chalk.gray(`  ${t('doctor_running')}`));
     
     try {
         const res = await ctx.council.runDiagnostics();
         console.log(res.output);
         if (res.error) {
-            console.log(chalk.red(`\n  Error: ${res.error}`));
+            console.log(chalk.red(`\n  ${t('doctor_error')}: ${res.error}`));
         }
     } catch (e: any) {
-        console.log(chalk.red(`\n  Failed to run diagnostics: ${e.message}`));
+        console.log(chalk.red(`\n  ${t('doctor_failed')}: ${e.message}`));
     }
     console.log('');
 }
