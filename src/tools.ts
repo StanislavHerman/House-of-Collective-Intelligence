@@ -6,8 +6,8 @@ import { BrowserManager } from './browser.js';
 import os from 'node:os';
 import axios from 'axios';
 import { createRequire } from 'node:module';
-const require = createRequire(import.meta.url);
-const xcode = require('xcode');
+const nodeRequire = createRequire(import.meta.url);
+const xcode = nodeRequire('xcode');
 
 const execAsync = util.promisify(exec);
 

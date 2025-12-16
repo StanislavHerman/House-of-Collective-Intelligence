@@ -47,7 +47,7 @@ export function estimateTokens(text: string): number {
   return Math.ceil(text.length / 2.5);
 }
 
-function getMimeType(base64: string): string {
+export function getMimeType(base64: string): string {
     if (base64.startsWith('/9j/')) return 'image/jpeg';
     if (base64.startsWith('iVBORw0KGgo')) return 'image/png';
     if (base64.startsWith('R0lGODdh') || base64.startsWith('R0lGODlh')) return 'image/gif';

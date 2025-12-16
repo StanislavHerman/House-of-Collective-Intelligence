@@ -642,7 +642,7 @@ export class Council {
       }
   }
 
-  private parseTools(text: string): { type: 'command' | 'file' | 'edit' | 'read' | 'tree' | 'search' | 'browser_open' | 'browser_search' | 'browser_act' | 'desktop_screenshot' | 'desktop_act' | 'system_diagnostics' | 'ios_config', content: string, arg: string }[] {
+  public parseTools(text: string): { type: 'command' | 'file' | 'edit' | 'read' | 'tree' | 'search' | 'browser_open' | 'browser_search' | 'browser_act' | 'desktop_screenshot' | 'desktop_act' | 'system_diagnostics' | 'ios_config', content: string, arg: string }[] {
     const results: { type: any, content: string, arg: string, index: number }[] = [];
     
     // Regex для bash (command)

@@ -27,6 +27,7 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
     "postinstall": "npm run build",
     "setup": "node -e \"if (process.platform === 'win32') { require('child_process').execSync('powershell -ExecutionPolicy Bypass -File install.ps1', { stdio: 'inherit' }); } else { require('child_process').execSync('chmod +x install.sh && ./install.sh', { stdio: 'inherit' }); }\""
   },
@@ -40,7 +41,10 @@
     "xcode": "^3.0.1"
   },
   "devDependencies": {
+    "@types/jest": "^30.0.0",
     "@types/node": "^22.13.1",
+    "jest": "^30.2.0",
+    "ts-jest": "^29.4.6",
     "typescript": "^5.6.3"
   }
 }
