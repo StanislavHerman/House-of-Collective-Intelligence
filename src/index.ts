@@ -133,8 +133,9 @@ async function processPrompt(text: string, council: Council, config: ConfigManag
     try {
         await askCouncil(text, council, config, controller.signal);
     } catch (err: any) {
-        if (err.message === 'Aborted' || err.name === 'AbortError') {
-            // Already logged in handler or just suppress
+        const msg = (err.message || '').toLowerCase();
+        if (msg === 'aborted' || err.name === 'AbortError' || msg.includes('canceled')) {
+            // Suppress "aborted" errors as they are user-initiated
         } else {
             console.error(chalk.red(`\n  ${t('error')}: ${err.message}`));
         }
@@ -270,16 +271,24 @@ async function checkUpdate() {
     try {
         const { stdout } = await execAsync('git fetch && git status -uno', { cwd: projectRoot });
         if (!stdout.includes('Your branch is up to date') && !stdout.includes('up to date with')) {
-             // Basic check: if git status says we are behind or have incoming commits
-             // But 'Your branch is up to date' is the standard message when clean.
-             // If we are behind, it usually says "Your branch is behind..."
-             // Let's invert: if it DOESN'T say "up to date", we assume update available.
              console.log(chalk.green(`  ${t('update_available')} (${t('cmd_update')})\n`));
         }
     } catch {
         // Silent fail
     }
 }
+
+// Global Error Handlers to prevent crash
+process.on('uncaughtException', (err) => {
+    if (err.message === 'Aborted' || err.message === 'aborted') return;
+    console.error(chalk.red(`\n  💥 Uncaught Exception: ${err.message}`));
+    // Don't exit, try to recover
+});
+
+process.on('unhandledRejection', (reason: any) => {
+    if (reason?.message === 'Aborted' || reason?.message === 'aborted') return;
+    // console.error(chalk.red(`\n  💥 Unhandled Rejection: ${reason?.message || reason}`));
+});
 
 main().catch(err => {
   console.error('Fatal error:', err);
