@@ -86,11 +86,6 @@ function prepareMessages(
   for (let i = history.length - 1; i >= 0; i--) {
     const msg = history[i];
     
-    // Skip if this is the very last message and it duplicates the current prompt
-    if (i === history.length - 1 && msg.role === 'user' && msg.text === prompt) {
-        continue;
-    }
-
     // Map internal roles to standard API roles
     const apiRole = msg.role === 'chair' ? 'assistant' : (msg.role === 'assistant' ? 'assistant' : 'user');
     const tokens = estimateTokens(msg.text); // Rough estimate for text only
@@ -273,20 +268,28 @@ async function sendOpenAICompatible(
           return { role: 'system', content: text };
       }
 
-      const contentParts = m.content.map((c: any) => {
-          if (c.type === 'text') return { type: 'text', text: c.text };
-          if (c.type === 'image') return { type: 'image_url', image_url: { url: `data:${getMimeType(c.data)};base64,${c.data}` } };
-          return null;
-      }).filter(Boolean);
+      // Check if message has images
+      const hasImages = m.content.some((c: any) => c.type === 'image');
 
-      // Simplify to string if no images (better compatibility for OpenRouter/older models)
-      const hasImages = contentParts.some((c: any) => c.type === 'image_url');
-      if (!hasImages) {
-          const textContent = contentParts.map((c: any) => c.text).join('\n');
+      if (hasImages) {
+          // Multimodal: Format as array, skipping empty text
+          const contentParts = m.content.map((c: any) => {
+              if (c.type === 'text') {
+                  if (!c.text) return null; // Skip empty text
+                  return { type: 'text', text: c.text };
+              }
+              if (c.type === 'image') return { type: 'image_url', image_url: { url: `data:${getMimeType(c.data)};base64,${c.data}` } };
+              return null;
+          }).filter(Boolean);
+          return { role: m.role, content: contentParts };
+      } else {
+          // Text-only: Collapse to simple string for max compatibility
+          const textContent = m.content
+              .filter((c: any) => c.type === 'text')
+              .map((c: any) => c.text)
+              .join('\n');
           return { role: m.role, content: textContent };
       }
-
-      return { role: m.role, content: contentParts };
   });
 
   const headers: Record<string, string> = {
