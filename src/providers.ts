@@ -295,8 +295,8 @@ async function sendOpenAICompatible(
   };
 
   if (type === 'openrouter') {
-      headers['HTTP-Referer'] = 'https://github.com/stanislavherman/council-cli'; // Optional but recommended
-      headers['X-Title'] = 'House of Soviets CLI';
+      headers['HTTP-Referer'] = 'https://github.com/StanislavHerman/House-of-Collective-Intelligence'; // Optional but recommended
+      headers['X-Title'] = 'House of Collective Intelligence';
   }
 
   const tryChat = async () => {
