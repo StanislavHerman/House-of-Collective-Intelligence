@@ -418,6 +418,11 @@ export class Council {
                 if (onProgress) onProgress({ type: 'error', message: 'Permission denied (read)' });
                 continue;
             }
+            if ((tool.type === 'tree' || tool.type === 'search') && !perms.allow_file_read) {
+                toolOutputMsg += `${tool.type === 'tree' ? 'Tree View' : 'Smart Search'}: ${tool.content}\nError: Permission denied. User has disabled file reading in /settings.\n\n`;
+                if (onProgress) onProgress({ type: 'error', message: 'Permission denied (read)' });
+                continue;
+            }
             if ((tool.type === 'browser_open' || tool.type === 'browser_search' || tool.type === 'browser_act') && !perms.allow_browser) {
                 toolOutputMsg += `${tool.type}: ${tool.content}\nError: Permission denied. User has disabled browser access in /settings.\n\n`;
                 if (onProgress) onProgress({ type: 'error', message: 'Permission denied (browser)' });
