@@ -43,8 +43,8 @@ export class Council {
   public saveStats() {
       try {
           const dir = path.dirname(this.statsFile);
-          if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-          fs.writeFileSync(this.statsFile, JSON.stringify(this.stats, null, 2));
+          if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
+          fs.writeFileSync(this.statsFile, JSON.stringify(this.stats, null, 2), { mode: 0o600 });
       } catch (e) {
           // ignore
       }
