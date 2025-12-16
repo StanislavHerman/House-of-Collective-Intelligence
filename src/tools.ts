@@ -587,9 +587,25 @@ export class ToolManager {
       }
   }
 
+  // Helper to quote shell arguments securely
+  private quoteShell(arg: string): string {
+      if (process.platform === 'win32') {
+          // PowerShell escaping: escape single quote with another single quote, wrap in single quotes
+          // But we use double quotes in the command string construction for consistency?
+          // Let's stick to single quotes for PowerShell literal strings where possible, or escape " with `"`
+          // Actually, our runCommand uses powershell.exe.
+          // PowerShell: 'text with ''quotes''' is literal.
+          return `'${arg.replace(/'/g, "''")}'`;
+      } else {
+          // Bash/Zsh: single quotes are safest, escape single quote by closing, escaping it, and reopening
+          return `'${arg.replace(/'/g, "'\\''")}'`;
+      }
+  }
+
   async searchSmart(query: string, dirPath: string = '.'): Promise<ToolResult> {
       try {
-          const safeQuery = query.replace(/"/g, '\\"');
+          const safeQuery = this.quoteShell(query);
+          const safeDir = this.quoteShell(dirPath);
           
           // 1. Try git grep first (It's lightning fast and respects .gitignore)
           // We check if we are in a git repo first
@@ -602,7 +618,7 @@ export class ToolManager {
               // --break: print empty line between matches from different files (optional)
               // --heading: print filename above matches (optional)
               // We do NOT use | head -n 100 to avoid pipe issues on Windows/shell. We limit in JS.
-              const cmd = `git grep -InF "${safeQuery}" "${dirPath}"`;
+              const cmd = `git grep -InF ${safeQuery} ${safeDir}`;
               const res = await this.runCommand(cmd);
               // Check for exit code 1 explicitly
               if (!res.error || (res.error && res.error.includes('(Exit Code: 1)'))) { 
@@ -628,14 +644,14 @@ export class ToolManager {
               'vendor', 'venv', '.env', '.venv', 'env'
           ];
           
-          const excludeArgs = ignoreDirs.map(d => `--exclude-dir="${d}"`).join(' ');
+          const excludeArgs = ignoreDirs.map(d => `--exclude-dir=${this.quoteShell(d)}`).join(' ');
           
           // -r: recursive
           // -I: ignore binary files
           // -n: line number
           // -H: print filename
           // -F: fixed string (literal)
-          const cmd = `grep -rInHF "${safeQuery}" ${excludeArgs} "${dirPath}"`; 
+          const cmd = `grep -rInHF ${safeQuery} ${excludeArgs} ${safeDir}`; 
           
           const res = await this.runCommand(cmd);
           if (res.error && res.error.includes('(Exit Code: 1)')) {
