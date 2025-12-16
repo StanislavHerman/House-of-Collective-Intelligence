@@ -32,26 +32,39 @@ The Council is not just for chat. Agents can perform real actions on your comput
 
 #### 🚀 Installation
 
+**Prerequisites:**
+- **Node.js**: v18 or higher (v20 recommended).
+- **Git**: To clone the repository.
+
 **macOS / Linux:**
-1. Clone the repository.
-2. Run the installation script:
+1. Clone the repository:
    ```bash
-   ./install.sh
+   git clone https://github.com/StanislavHerman/House-of-Collective-Intelligence.git
+   cd House-of-Collective-Intelligence
    ```
-3. Start the app:
+2. Setup and Run:
+   ```bash
+   npm run setup
+   # Or manually: npm install && npm run build
+   ```
+3. Start:
    ```bash
    ./hause
-   # Or run manually: npm start
    ```
 
 **Windows (PowerShell):**
-1. Clone the repository.
-2. Run the installation script (you might need to allow script execution):
+1. Clone the repository:
+   ```powershell
+   git clone https://github.com/StanislavHerman/House-of-Collective-Intelligence.git
+   cd House-of-Collective-Intelligence
+   ```
+2. Setup and Run (as Admin might be required for policy):
    ```powershell
    Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-   .\install.ps1
+   npm run setup
+   # Or manually: npm install; npm run build
    ```
-3. Start the app:
+3. Start:
    ```cmd
    .\hause.cmd
    ```
