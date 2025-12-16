@@ -316,7 +316,20 @@ export class ToolManager {
       }
       
       // 30s timeout for commands to prevent hanging
-      const { stdout, stderr } = await execAsync(wrappedCmd, { cwd: this.cwd, shell, timeout: 30000 });
+      // Inject CI/Non-interactive env vars to prevent tools from waiting for input
+      const env = {
+          ...process.env,
+          CI: 'true',
+          GIT_TERMINAL_PROMPT: '0',
+          DEBIAN_FRONTEND: 'noninteractive'
+      };
+
+      const { stdout, stderr } = await execAsync(wrappedCmd, { 
+          cwd: this.cwd, 
+          shell, 
+          timeout: 30000,
+          env
+      });
       
       let output = stdout;
       let newCwd = this.cwd;
@@ -366,6 +379,16 @@ export class ToolManager {
       }
 
       await fs.mkdir(path.dirname(target), { recursive: true });
+
+      // Safety: Validate JSON before writing
+      if (target.endsWith('.json')) {
+          try {
+              JSON.parse(content);
+          } catch (e: any) {
+              return { output: '', error: `Write failed: Invalid JSON content. ${e.message}` };
+          }
+      }
+
       await fs.writeFile(target, content);
       return { output: `File saved to ${filePath}` };
     } catch (error: any) {
@@ -452,6 +475,15 @@ export class ToolManager {
               // Handle newline gluing
               const newContent = (before ? before + '\n' : '') + replace + (after ? '\n' + after : '');
               
+              // Safety: Validate JSON
+              if (target.endsWith('.json')) {
+                  try {
+                      JSON.parse(newContent);
+                  } catch (e: any) {
+                      return { output: '', error: `Edit failed: Resulting content is invalid JSON. ${e.message}` };
+                  }
+              }
+
               await fs.writeFile(target, newContent);
               return { output: `Successfully edited ${filePath} (Fuzzy Match)` };
           }
