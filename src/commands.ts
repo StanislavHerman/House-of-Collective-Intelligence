@@ -477,9 +477,14 @@ async function cmdUpdate(ctx: CommandContext) {
     
     try {
         // 1. Check for updates
-        const { stdout: status } = await execAsync('git fetch && git status -uno', { cwd: projectRoot });
+        await execAsync('git fetch', { cwd: projectRoot });
+        const { stdout: status } = await execAsync('git status -uno --porcelain=v2 --branch', { cwd: projectRoot });
         
-        if (status.includes('Your branch is up to date')) {
+        // Format: # branch.ab +0 -0
+        const match = status.match(/# branch\.ab \+\d+ -(\d+)/);
+        const behind = match ? parseInt(match[1], 10) : 0;
+
+        if (behind === 0) {
             console.log(chalk.green(`  ${t('update_up_to_date')}\n`));
             return;
         }

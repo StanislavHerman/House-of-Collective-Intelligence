@@ -319,8 +319,12 @@ function getStatusBar(ctx: { history: HistoryManager, config: ConfigManager, cou
 
 async function checkUpdate() {
     try {
-        const { stdout } = await execAsync('git fetch && git status -uno', { cwd: projectRoot });
-        if (!stdout.includes('Your branch is up to date') && !stdout.includes('up to date with')) {
+        await execAsync('git fetch', { cwd: projectRoot });
+        const { stdout } = await execAsync('git status -uno --porcelain=v2 --branch', { cwd: projectRoot });
+        // Check if behind count is > 0
+        // Format: # branch.ab +0 -0
+        const match = stdout.match(/# branch\.ab \+\d+ -(\d+)/);
+        if (match && parseInt(match[1], 10) > 0) {
              console.log(chalk.green(`  ${t('update_available')} (${t('cmd_update')})\n`));
         }
     } catch {
