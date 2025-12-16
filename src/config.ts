@@ -16,6 +16,15 @@ export class ConfigManager {
 
   private load() {
     try {
+      const defaultPermissions: Required<AppPermissions> = {
+        allow_browser: true,
+        allow_desktop: true,
+        allow_file_read: true,
+        allow_file_write: true,
+        allow_file_edit: true,
+        allow_command: true
+      };
+
       fs.mkdirSync(CONFIG_DIR, { recursive: true });
       if (fs.existsSync(CONFIG_FILE)) {
           const raw = fs.readFileSync(CONFIG_FILE, 'utf8');
@@ -29,16 +38,7 @@ export class ConfigManager {
           if (this.config.language === undefined) this.config.language = 'ru'; // Default RU
           
           // Permissions defaults
-          if (!this.config.permissions) {
-              this.config.permissions = {
-                  allow_browser: true,
-                  allow_desktop: true,
-                  allow_file_read: true,
-                  allow_file_write: true,
-                  allow_file_edit: true,
-                  allow_command: true
-              };
-          }
+          this.config.permissions = { ...defaultPermissions, ...(this.config.permissions || {}) };
       } else {
           // Миграция со старого конфига (если есть) или дефолт
           this.config = { 
@@ -121,13 +121,15 @@ export class ConfigManager {
   }
 
   getPermissions(): AppPermissions {
-      return this.config.permissions || {
+      const defaultPermissions: Required<AppPermissions> = {
           allow_browser: true,
           allow_desktop: true,
           allow_file_read: true,
           allow_file_write: true,
+          allow_file_edit: true,
           allow_command: true
       };
+      return { ...defaultPermissions, ...(this.config.permissions || {}) };
   }
 
   setPermissions(perms: AppPermissions) {

@@ -165,6 +165,16 @@ export class Council {
         }
     }
 
+    const perms = this.config.getPermissions();
+
+    const truncateMiddle = (text: string, maxChars: number): string => {
+        if (!text) return '';
+        if (text.length <= maxChars) return text;
+        const head = Math.floor(maxChars * 0.7);
+        const tail = maxChars - head;
+        return `${text.slice(0, head)}\n... [обрезано ${text.length - maxChars} символов] ...\n${text.slice(-tail)}`;
+    };
+
     // Сохраняем вопрос
     const imageExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.webp'];
     const detectedImages: string[] = [];
@@ -262,7 +272,9 @@ export class Council {
     let memoryInstruction = "";
     if (fs.existsSync(memoryFile)) {
         try {
-            const memoryContent = fs.readFileSync(memoryFile, 'utf8');
+            const rawMemoryContent = fs.readFileSync(memoryFile, 'utf8');
+            const MAX_MEMORY_CHARS = 12000;
+            const memoryContent = truncateMiddle(rawMemoryContent, MAX_MEMORY_CHARS);
             chairSystemPromptText += `\n\n=== ДОЛГОВРЕМЕННАЯ ПАМЯТЬ ПРОЕКТА (.council_memory.md) ===\n${memoryContent}\n==========================================================\n`;
             // Minimal instruction: Read context, update if necessary. No forced zoning.
             memoryInstruction = `\n[СИСТЕМА ПАМЯТИ]: Файл .council_memory.md содержит контекст проекта. Поддерживай его в актуальном состоянии.`;
@@ -276,7 +288,20 @@ export class Council {
     chairSystemPromptText += memoryInstruction;
     // -------------------------------------
 
-    const CHAIR_SYSTEM_PROMPT = chairSystemPromptText + `\n\n${TOOLS_DEF}\n\nФОРМАТ ВЫЗОВА ИНСТРУМЕНТОВ (строго соблюдай MARKDOWN блоки):\n   \n   1. Выполнить команду (bash):\n   \`\`\`bash\n   команда\n   \`\`\`\n   \n   2. Создать/записать файл:\n   \`\`\`file:путь/к/файлу\n   содержимое файла\n   \`\`\`\n   \n   3. Прочитать файл:\n   \`\`\`read:путь/к/файлу\`\`\`\n\n   4. Браузер (Интернет + Зрение):\n   \`\`\`browser:open url\`\`\`\n   \`\`\`browser:search query\`\`\`\n   \`\`\`browser:act action\`\`\`\n\n   5. Экран (macOS):\n   \`\`\`desktop:screenshot path.png\`\`\`\n   \`\`\`desktop:act action\`\`\`\n`;
+    const toolsEnabled = !!(
+        perms.allow_command ||
+        perms.allow_file_read ||
+        perms.allow_file_write ||
+        perms.allow_file_edit ||
+        perms.allow_browser ||
+        perms.allow_desktop
+    );
+
+    const toolsPrompt = toolsEnabled
+        ? `\n\n${TOOLS_DEF}`
+        : `\n\n[ИНСТРУМЕНТЫ]: Все инструменты отключены (см. /settings). Не генерируй tool-блоки, отвечай текстом.`;
+
+    const CHAIR_SYSTEM_PROMPT = chairSystemPromptText + toolsPrompt;
 
     // 1. Опрашиваем Совет
     if (onProgress && councilMembers.length > 0) onProgress(`${t('council_asking')} (${councilMembers.length})...`);
@@ -334,9 +359,6 @@ export class Council {
     if (onProgress) onProgress(`${t('chair_analyzing')} (${chairAgent.name})`);
     
     let promptSuffix = `\nДай финальный ответ и выполни действия при необходимости.`;
-    if (councilMembers.length > 0) {
-        promptSuffix += ` Не забудь блок оценки в конце!`;
-    }
     
     let currentPrompt = contextForChair + promptSuffix;
     
@@ -345,6 +367,7 @@ export class Council {
     let finalChairResponse: ProviderResponse | null = null;
     let MAX_TURNS = 5; 
     let turn = 0;
+    const MAX_TOOL_OUTPUT_CHARS = 8000;
 
     while (turn < MAX_TURNS) {
         if (signal?.aborted) throw new Error('Aborted');
@@ -386,7 +409,6 @@ export class Council {
         let toolOutputMsg = `\n\n--- TOOL OUTPUTS (Turn ${turn + 1}) ---\n`;
         
         const currentImages: string[] = []; // Collect images from this turn
-        const perms = this.config.getPermissions();
         
         if (onProgress) onProgress(`${t('tool_executing')} (${toolsToRun.length})...`);
         
@@ -436,10 +458,14 @@ export class Council {
 
             if (tool.type === 'command') {
                 const res = await this.tools.runCommand(tool.content, signal);
-                toolOutputMsg += `Command: ${tool.content}\nOutput: ${res.output}\nError: ${res.error || 'None'}\n\n`;
+                const output = truncateMiddle(res.output, MAX_TOOL_OUTPUT_CHARS);
+                const err = truncateMiddle(res.error || '', 2000);
+                toolOutputMsg += `Command: ${tool.content}\nOutput:\n${output}\nError: ${err || 'None'}\n\n`;
             } else if (tool.type === 'file') {
                 const res = await this.tools.writeFile(tool.arg, tool.content);
-                toolOutputMsg += `Write File: ${tool.arg}\nResult: ${res.output} ${res.error || ''}\n\n`;
+                const output = truncateMiddle(res.output, MAX_TOOL_OUTPUT_CHARS);
+                const err = truncateMiddle(res.error || '', 2000);
+                toolOutputMsg += `Write File: ${tool.arg}\nResult:\n${output}\nError: ${err}\n\n`;
             } else if (tool.type === 'edit') {
                 // Parse SEARCH/REPLACE block
                 const parts = tool.content.split('=======');
@@ -447,7 +473,9 @@ export class Council {
                     const searchBlock = parts[0].replace('<<<<<<< SEARCH', '').trim();
                     const replaceBlock = parts[1].replace('>>>>>>>', '').trim();
                     const res = await this.tools.editFile(tool.arg, searchBlock, replaceBlock);
-                    toolOutputMsg += `Edit File: ${tool.arg}\nResult: ${res.output} ${res.error || ''}\n\n`;
+                    const output = truncateMiddle(res.output, MAX_TOOL_OUTPUT_CHARS);
+                    const err = truncateMiddle(res.error || '', 2000);
+                    toolOutputMsg += `Edit File: ${tool.arg}\nResult:\n${output}\nError: ${err}\n\n`;
                 } else {
                     toolOutputMsg += `Edit File: ${tool.arg}\nError: Invalid format. Must contain <<<<<<< SEARCH, =======, and >>>>>>> blocks.\n\n`;
                 }
@@ -464,22 +492,34 @@ export class Council {
                     res = await this.tools.readFile(tool.content);
                 }
                 
-                toolOutputMsg += `Read File: ${tool.content}\nContent:\n${res.output}\nError: ${res.error || ''}\n\n`;
+                const output = truncateMiddle(res.output, MAX_TOOL_OUTPUT_CHARS);
+                const err = truncateMiddle(res.error || '', 2000);
+                toolOutputMsg += `Read File: ${tool.content}\nContent:\n${output}\nError: ${err}\n\n`;
             } else if (tool.type === 'tree') {
                 const res = await this.tools.treeView(tool.content || '.');
-                toolOutputMsg += `Tree View: ${tool.content}\nOutput:\n${res.output}\nError: ${res.error || ''}\n\n`;
+                const output = truncateMiddle(res.output, MAX_TOOL_OUTPUT_CHARS);
+                const err = truncateMiddle(res.error || '', 2000);
+                toolOutputMsg += `Tree View: ${tool.content}\nOutput:\n${output}\nError: ${err}\n\n`;
             } else if (tool.type === 'search') {
                 const res = await this.tools.searchSmart(tool.content);
-                toolOutputMsg += `Smart Search: ${tool.content}\nOutput:\n${res.output}\nError: ${res.error || ''}\n\n`;
+                const output = truncateMiddle(res.output, MAX_TOOL_OUTPUT_CHARS);
+                const err = truncateMiddle(res.error || '', 2000);
+                toolOutputMsg += `Smart Search: ${tool.content}\nOutput:\n${output}\nError: ${err}\n\n`;
             } else if (tool.type === 'browser_open') {
                 const res = await this.tools.browserOpen(tool.content);
-                toolOutputMsg += `Browser Open: ${tool.content}\nContent: ${res.output.substring(0, 2000)}...\nError: ${res.error || ''}\n\n`;
+                const output = truncateMiddle(res.output, Math.min(2000, MAX_TOOL_OUTPUT_CHARS));
+                const err = truncateMiddle(res.error || '', 2000);
+                toolOutputMsg += `Browser Open: ${tool.content}\nContent:\n${output}\nError: ${err}\n\n`;
             } else if (tool.type === 'browser_search') {
                 const res = await this.tools.browserSearch(tool.content);
-                toolOutputMsg += `Browser Search: ${tool.content}\nResults:\n${res.output}\nError: ${res.error || ''}\n\n`;
+                const output = truncateMiddle(res.output, MAX_TOOL_OUTPUT_CHARS);
+                const err = truncateMiddle(res.error || '', 2000);
+                toolOutputMsg += `Browser Search: ${tool.content}\nResults:\n${output}\nError: ${err}\n\n`;
             } else if (tool.type === 'browser_act') {
                 const res = await this.tools.browserAct(tool.content);
-                toolOutputMsg += `Browser Act: ${tool.content}\nResult: ${res.output}\nError: ${res.error || ''}\n\n`;
+                const output = truncateMiddle(res.output, MAX_TOOL_OUTPUT_CHARS);
+                const err = truncateMiddle(res.error || '', 2000);
+                toolOutputMsg += `Browser Act: ${tool.content}\nResult:\n${output}\nError: ${err}\n\n`;
                 
                 // If screenshot, load it as base64
                 if (tool.content.startsWith('screenshot') && !res.error) {
@@ -498,7 +538,9 @@ export class Council {
                 }
             } else if (tool.type === 'desktop_screenshot') {
                 const res = await this.tools.desktopScreenshot(tool.content);
-                toolOutputMsg += `Desktop Screenshot: ${tool.content}\nResult: ${res.output}\nError: ${res.error || ''}\n\n`;
+                const output = truncateMiddle(res.output, MAX_TOOL_OUTPUT_CHARS);
+                const err = truncateMiddle(res.error || '', 2000);
+                toolOutputMsg += `Desktop Screenshot: ${tool.content}\nResult:\n${output}\nError: ${err}\n\n`;
                 
                 if (!res.error) {
                      try {
@@ -514,13 +556,19 @@ export class Council {
                 }
             } else if (tool.type === 'desktop_act') {
                 const res = await this.tools.desktopAct(tool.content);
-                toolOutputMsg += `Desktop Act: ${tool.content}\nResult: ${res.output}\nError: ${res.error || ''}\n\n`;
+                const output = truncateMiddle(res.output, MAX_TOOL_OUTPUT_CHARS);
+                const err = truncateMiddle(res.error || '', 2000);
+                toolOutputMsg += `Desktop Act: ${tool.content}\nResult:\n${output}\nError: ${err}\n\n`;
             } else if (tool.type === 'system_diagnostics') {
                 const res = await this.tools.runDiagnostics();
-                toolOutputMsg += `System Diagnostics:\n${res.output}\nError: ${res.error || ''}\n\n`;
+                const output = truncateMiddle(res.output, MAX_TOOL_OUTPUT_CHARS);
+                const err = truncateMiddle(res.error || '', 2000);
+                toolOutputMsg += `System Diagnostics:\n${output}\nError: ${err}\n\n`;
             } else if (tool.type === 'ios_config') {
                 const res = await this.tools.iosConfig(tool.content);
-                toolOutputMsg += `iOS Config:\n${res.output}\nError: ${res.error || ''}\n\n`;
+                const output = truncateMiddle(res.output, MAX_TOOL_OUTPUT_CHARS);
+                const err = truncateMiddle(res.error || '', 2000);
+                toolOutputMsg += `iOS Config:\n${output}\nError: ${err}\n\n`;
             }
         }
         
@@ -740,15 +788,32 @@ export class Council {
     
     // Filter out obvious placeholders/examples
     return results.filter(r => {
-        const p = (r.arg || r.content || '').toLowerCase();
-        // Check filtering
-        if (p.includes('path/to/') || p.includes('/path/to') || p === 'file.txt' || p === 'example.com') {
+        const raw = (r.arg || r.content || '').trim();
+        const p = raw.toLowerCase();
+
+        const hasAnglePlaceholder = /<[^>]{1,200}>/.test(raw);
+        const hasPathPlaceholder =
+            p.includes('path/to') ||
+            p.includes('/path/to') ||
+            p.includes('путь/к');
+        const isGenericPlaceholder =
+            p === 'file.txt' ||
+            p === 'example.com' ||
+            p === 'команда' ||
+            p === '<команда>' ||
+            p === '<command>' ||
+            p === '<cmd>' ||
+            p === '<url>' ||
+            p === '...';
+
+        if (hasAnglePlaceholder || hasPathPlaceholder || isGenericPlaceholder) {
             console.log(`[Parser] Filtered placeholder tool: ${r.type} ${p}`);
             return false;
         }
+
         // Also ignore if content is purely "..." (example block)
         if (r.content.trim() === '...') return false;
-        
+
         return true;
     }).map(r => ({ type: r.type, content: r.content, arg: r.arg })); // Remove index from return
   }
