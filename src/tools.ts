@@ -359,6 +359,19 @@ export class ToolManager {
           output += (output ? '\n--- STDERR ---\n' : '') + stderr;
       }
       
+      // Truncate output if too large to prevent context flooding
+      const MAX_CHARS = 50000; // ~50KB
+      const MAX_LINES = 200;
+
+      if (output.length > MAX_CHARS) {
+          output = output.slice(0, MAX_CHARS) + `\n... [Output truncated: ${output.length - MAX_CHARS} chars removed]`;
+      }
+
+      const outLines = output.split(/\r?\n/);
+      if (outLines.length > MAX_LINES) {
+          output = outLines.slice(0, MAX_LINES).join('\n') + `\n... [Output truncated: ${outLines.length - MAX_LINES} lines removed]`;
+      }
+      
       return { output: output || '' }; 
     } catch (error: any) {
       // Check for timeout kill or abort
