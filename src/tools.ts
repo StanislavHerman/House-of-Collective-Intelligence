@@ -131,12 +131,15 @@ export class ToolManager {
 
   async iosConfig(argsString: string): Promise<ToolResult> {
       try {
-          // Parse args: action projectPath [key] [value/target]
-          // Simple space split might fail if path has spaces.
-          // Let's assume standard shell-like args or simple splits for now.
-          // Better: use regex to capture path.
-          
-          const args = argsString.trim().split(/\s+/);
+          // Parse args respecting quotes: list "My Project/proj.pbxproj"
+          const args: string[] = [];
+          const regex = /[^\s"']+|"([^"]*)"|'([^']*)'/g;
+          let match;
+          while ((match = regex.exec(argsString.trim())) !== null) {
+              // match[1] is double quoted content, match[2] is single quoted, match[0] is unquoted/full
+              args.push(match[1] || match[2] || match[0]);
+          }
+
           const action = args[0];
           const projectPath = args[1];
           
