@@ -219,6 +219,11 @@ export class ConfigManager {
                     }
                 }
             }
+
+            // Check if secretary was removed
+            if (this.config.secretaryAgentId && !this.config.agents.find(a => a.id === this.config.secretaryAgentId)) {
+                this.config.secretaryAgentId = undefined;
+            }
         }
     }
     
