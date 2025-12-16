@@ -6,86 +6,96 @@ import { t } from './i18n.js';
 
 // Singleton Readline Interface
 let rl: ReturnType<typeof createInterface> | null = null;
-let pasteProxy: any = null; // Deprecated, but keeping var for cleanup if needed
+let isStdinPatched = false;
+
+function setupPasteInterceptor() {
+    if (isStdinPatched) return;
+    isStdinPatched = true;
+
+    // Enable Bracketed Paste Mode
+    process.stdout.write('\x1b[?2004h');
+
+    const originalEmit = process.stdin.emit;
+    let inPasteMode = false;
+    let pasteBuffer = '';
+    let pasteTimeout: any = null;
+
+    (process.stdin as any).emit = function(event: string, ...args: any[]) {
+        if (event === 'data' && args[0]) {
+            const chunk = args[0].toString();
+            
+            // --- 1. Bracketed Paste Logic ---
+            if (chunk.includes('\x1b[200~')) {
+                inPasteMode = true;
+                pasteBuffer = '';
+                const parts = chunk.split('\x1b[200~');
+                if (parts[1]) pasteBuffer += parts[1];
+                
+                if (pasteTimeout) clearTimeout(pasteTimeout);
+                pasteTimeout = setTimeout(() => {
+                    if (inPasteMode) {
+                        inPasteMode = false;
+                        // Flush safe
+                        const safe = pasteBuffer.replace(/(\r\n|\n|\r)/g, ' ');
+                        (originalEmit as any).call(process.stdin, 'data', Buffer.from(safe));
+                        pasteBuffer = '';
+                    }
+                }, 500);
+                
+                return true; 
+            }
+
+            if (inPasteMode) {
+                if (chunk.includes('\x1b[201~')) {
+                    inPasteMode = false;
+                    if (pasteTimeout) clearTimeout(pasteTimeout);
+
+                    const parts = chunk.split('\x1b[201~');
+                    pasteBuffer += parts[0];
+                    
+                    // Sanitize: Flatten newlines to spaces
+                    let sanitized = pasteBuffer.replace(/(\r\n|\n|\r)/g, ' ');
+                    
+                    (originalEmit as any).call(process.stdin, 'data', Buffer.from(sanitized));
+                    
+                    if (parts[1]) {
+                        (originalEmit as any).call(process.stdin, 'data', Buffer.from(parts[1]));
+                    }
+                    pasteBuffer = '';
+                    return true;
+                } else {
+                    pasteBuffer += chunk;
+                    return true;
+                }
+            }
+
+            // --- 2. Heuristic Fallback (For terminals without Bracketed Paste) ---
+            // If chunk is "fast" (>3 chars) and contains newlines, it's likely a paste.
+            // Normal typing is 1 char at a time.
+            if (chunk.length > 3 && /[\r\n]/.test(chunk)) {
+                // Treat as paste -> Sanitize
+                // 1. Strip trailing newline (prevents immediate submit)
+                let safe = chunk.replace(/[\r\n]+$/, '');
+                // 2. Flatten internal newlines
+                safe = safe.replace(/(\r\n|\n|\r)/g, ' ');
+                
+                (originalEmit as any).call(process.stdin, 'data', Buffer.from(safe));
+                return true;
+            }
+        }
+        
+        return originalEmit.apply(process.stdin, arguments as any);
+    };
+}
 
 export function initReadline() {
   if (rl) return;
   
-  // Enable Bracketed Paste Mode
-  process.stdout.write('\x1b[?2004h');
+  // Ensure interceptor is set up (only runs once)
+  setupPasteInterceptor();
 
   // Ensure stdin is flowing
   process.stdin.resume();
-
-  // Robust Paste Interceptor using emit monkey-patch
-  // This is safer than _ttyWrite because it captures the raw stream
-  const originalEmit = process.stdin.emit;
-  let inPasteMode = false;
-  let pasteBuffer = '';
-  let pasteTimeout: any = null;
-
-  (process.stdin as any).emit = function(event: string, ...args: any[]) {
-      if (event === 'data' && args[0]) {
-          const chunk = args[0].toString();
-          
-          // Detect Paste Start
-          if (chunk.includes('\x1b[200~')) {
-              inPasteMode = true;
-              pasteBuffer = '';
-              // If start tag is followed by content in same chunk
-              const parts = chunk.split('\x1b[200~');
-              // parts[0] is pre-paste, parts[1] is content
-              if (parts[1]) {
-                  pasteBuffer += parts[1];
-              }
-              
-              // Set fallback timeout (if end tag never comes)
-              if (pasteTimeout) clearTimeout(pasteTimeout);
-              pasteTimeout = setTimeout(() => {
-                  if (inPasteMode) {
-                      inPasteMode = false;
-                      // Flush what we have, stripping newlines just in case
-                      const safe = pasteBuffer.replace(/(\r\n|\n|\r)/g, ' ');
-                      (originalEmit as any).call(process.stdin, 'data', Buffer.from(safe));
-                      pasteBuffer = '';
-                  }
-              }, 500); // 500ms max for a paste operation
-              
-              return true; // Stop propagation
-          }
-
-          // Detect Paste End
-          if (inPasteMode) {
-              if (chunk.includes('\x1b[201~')) {
-                  inPasteMode = false;
-                  if (pasteTimeout) clearTimeout(pasteTimeout);
-
-                  const parts = chunk.split('\x1b[201~');
-                  pasteBuffer += parts[0]; // Content before end tag
-                  
-                  // SANITIZE: Replace newlines with spaces to prevent immediate submit
-                  const sanitized = pasteBuffer.replace(/(\r\n|\n|\r)/g, ' ');
-                  
-                  // Emit sanitized paste
-                  (originalEmit as any).call(process.stdin, 'data', Buffer.from(sanitized));
-                  
-                  // Emit any post-paste content (rare but possible)
-                  if (parts[1]) {
-                      (originalEmit as any).call(process.stdin, 'data', Buffer.from(parts[1]));
-                  }
-                  
-                  pasteBuffer = '';
-                  return true;
-              } else {
-                  // Still inside paste, just buffer
-                  pasteBuffer += chunk;
-                  return true;
-              }
-          }
-      }
-      
-      return originalEmit.apply(process.stdin, arguments as any);
-  };
 
   rl = createInterface({
     input: process.stdin, 
@@ -94,11 +104,8 @@ export function initReadline() {
     historySize: 200
   });
 
-  // Handle global SIGINT only if we are NOT in a question callback
-  // (question callback handles it locally)
   rl.on('SIGINT', () => {
-      // If we are idle, just exit
-      // If we are in a prompt, the prompt's listener handles it
+      // Handled by prompt
   });
 }
 
