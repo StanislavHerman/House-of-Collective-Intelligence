@@ -115,13 +115,13 @@ async function main() {
         const activeAgents = config.getAgents().filter(a => a.enabled);
         if (activeAgents.length === 0) {
             console.log(chalk.yellow(`\n  ⚠️  ${t('agents_empty')}`));
-            console.log(chalk.gray(`  Use /agents or /login to setup.\n`));
+            console.log(chalk.gray(`  ${t('setup_needed_hint')}\n`));
             
             // Optional: Auto-redirect to agents management if truly empty
             if (config.getAgents().length === 0) {
-                 const doSetup = await ui.select('Настроить агентов сейчас?', [
-                     { label: 'Да', value: 'yes' },
-                     { label: 'Нет', value: 'no' }
+                 const doSetup = await ui.select(t('setup_now_prompt'), [
+                     { label: t('yes'), value: 'yes' },
+                     { label: t('no'), value: 'no' }
                  ]);
                  if (doSetup === 'yes') {
                      await handleCommand('/agents', ctx);
