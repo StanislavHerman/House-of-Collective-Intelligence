@@ -657,8 +657,8 @@ export class Council {
     const results: any[] = [];
     
     // Regex для bash (command)
-    // Allow ```bash or ```sh or just ```command or ``` bash
-    const cmdRegex = /```\s*(?:bash|sh|zsh|command)\s*([\s\S]*?)\s*```/gi;
+    // Allow ```bash or ```sh or just ```command or ``` bash or ```shell
+    const cmdRegex = /```\s*(?:bash|sh|zsh|command|shell|term|terminal|console|cmd)\s*([\s\S]*?)\s*```/gi;
     let match;
     while ((match = cmdRegex.exec(text)) !== null) {
       results.push({ type: 'command', content: match[1].trim(), arg: '' });
@@ -745,7 +745,12 @@ export class Council {
 
     // Debug Log found tools
     if (results.length > 0) {
-        // console.log('[Parser] Raw tools found:', results.length);
+        console.log('[Parser] Raw tools found:', results.length, results.map(r => r.type));
+    } else if (text.includes('```')) {
+        console.log('[Parser] Warning: Code blocks detected but no tools parsed. Check regex/format.');
+        // Log first 100 chars of a block for debug
+        const firstBlock = text.split('```')[1];
+        if (firstBlock) console.log('[Parser] First block content:', firstBlock.substring(0, 50) + '...');
     }
     
     // Filter out obvious placeholders/examples
