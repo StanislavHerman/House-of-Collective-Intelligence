@@ -236,9 +236,9 @@ function getTimeoutForModel(model: string): number {
     const lower = model.toLowerCase();
     // Reasoning models take much longer
     if (lower.includes('reason') || lower.includes('r1') || lower.includes('o1-') || lower.includes('deep-research')) {
-        return 180000; // 3 minutes (was 10m)
+        return 900000; // 15 minutes (Reasoning models need time)
     }
-    return 60000; // 1 minute (was 5m)
+    return 300000; // 5 minutes (Standard models with large context)
 }
 
 async function sendOpenAICompatible(

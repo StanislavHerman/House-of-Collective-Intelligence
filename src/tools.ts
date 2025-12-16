@@ -293,7 +293,7 @@ export class ToolManager {
       return path.resolve(this.cwd, filePath);
   }
 
-  async runCommand(cmd: string): Promise<ToolResult> {
+  async runCommand(cmd: string, signal?: AbortSignal): Promise<ToolResult> {
     try {
       // Wrap command to persist directory changes
       let wrappedCmd = '';
@@ -315,7 +315,7 @@ export class ToolManager {
           wrappedCmd = `${cmd}; echo "__CWD__"; pwd`;
       }
       
-      // 30s timeout for commands to prevent hanging
+      // Infinite timeout (0) - rely on User Abort (signal)
       // Inject CI/Non-interactive env vars to prevent tools from waiting for input
       const env = {
           ...process.env,
@@ -327,8 +327,9 @@ export class ToolManager {
       const { stdout, stderr } = await execAsync(wrappedCmd, { 
           cwd: this.cwd, 
           shell, 
-          timeout: 30000,
-          env
+          timeout: 0, // No hard timeout
+          env,
+          signal // Pass abort signal
       });
       
       let output = stdout;
@@ -356,9 +357,9 @@ export class ToolManager {
       
       return { output: output || '' }; 
     } catch (error: any) {
-      // Check for timeout kill
-      if (error.signal === 'SIGTERM') {
-          return { output: '', error: 'Command timed out (30s limit). Process killed.' };
+      // Check for timeout kill or abort
+      if (error.signal === 'SIGTERM' || error.name === 'AbortError' || error.code === 'ABORT_ERR') {
+          return { output: '', error: 'Command aborted by user.' };
       }
       return { output: error.stdout || '', error: error.message + (error.stderr ? '\nSTDERR: ' + error.stderr : '') };
     }

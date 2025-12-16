@@ -435,7 +435,7 @@ export class Council {
             }
 
             if (tool.type === 'command') {
-                const res = await this.tools.runCommand(tool.content);
+                const res = await this.tools.runCommand(tool.content, signal);
                 toolOutputMsg += `Command: ${tool.content}\nOutput: ${res.output}\nError: ${res.error || 'None'}\n\n`;
             } else if (tool.type === 'file') {
                 const res = await this.tools.writeFile(tool.arg, tool.content);
@@ -445,7 +445,7 @@ export class Council {
                 const verifyCmd = this.config.getVerificationCommand();
                 if (verifyCmd && !res.error) {
                     if (onProgress) onProgress(`${t('verify_running')} (${verifyCmd})...`);
-                    const vRes = await this.tools.runCommand(verifyCmd);
+                    const vRes = await this.tools.runCommand(verifyCmd, signal);
                     const status = vRes.error ? t('verify_fail') : t('verify_success');
                     toolOutputMsg += `[Auto-Verify]: ${status}\nCmd: ${verifyCmd}\nOutput:\n${vRes.output}\nError: ${vRes.error || ''}\n\n`;
                 }
@@ -462,7 +462,7 @@ export class Council {
                     const verifyCmd = this.config.getVerificationCommand();
                     if (verifyCmd && !res.error) {
                         if (onProgress) onProgress(`${t('verify_running')} (${verifyCmd})...`);
-                        const vRes = await this.tools.runCommand(verifyCmd);
+                        const vRes = await this.tools.runCommand(verifyCmd, signal);
                         const status = vRes.error ? t('verify_fail') : t('verify_success');
                         toolOutputMsg += `[Auto-Verify]: ${status}\nCmd: ${verifyCmd}\nOutput:\n${vRes.output}\nError: ${vRes.error || ''}\n\n`;
                     }
