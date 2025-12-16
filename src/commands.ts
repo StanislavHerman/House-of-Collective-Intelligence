@@ -43,7 +43,6 @@ export const COMMANDS = [
   { cmd: '/lang', desc: 'cmd_lang' },
   { cmd: '/new', desc: 'cmd_new' },
   { cmd: '/doctor', desc: 'cmd_doctor' },
-  { cmd: '/verify', desc: 'cmd_verify' },
   { cmd: '/exit', desc: 'cmd_exit' },
 ];
 
@@ -65,10 +64,6 @@ export async function handleCommand(input: string, ctx: CommandContext): Promise
       await cmdDoctor(ctx);
       return false;
 
-    case '/verify':
-      await cmdVerify(ctx);
-      return false;
-    
     case '/agents':
     case '/chair':
       await cmdAgents(ctx);
@@ -579,30 +574,6 @@ async function cmdDoctor(ctx: CommandContext) {
         console.log(chalk.red(`\n  Failed to run diagnostics: ${e.message}`));
     }
     console.log('');
-}
-
-async function cmdVerify(ctx: CommandContext) {
-    const current = ctx.config.getVerificationCommand();
-    
-    console.log(chalk.cyan(`\n  ${t('verify_title')}`));
-    if (current) {
-        console.log(`  ${t('verify_current')}: ${chalk.green(current)}`);
-    } else {
-        console.log(`  ${t('verify_none')}`);
-    }
-    console.log(chalk.gray(`  ${t('verify_help')}\n`));
-
-    const input = await ui.input(t('verify_prompt'), current);
-    
-    if (input) {
-        if (input.trim() === 'DELETE') {
-            ctx.config.setVerificationCommand(undefined);
-            console.log(chalk.yellow(`  ${t('verify_deleted')}\n`));
-        } else {
-            ctx.config.setVerificationCommand(input.trim());
-            console.log(chalk.green(`  ✓ ${t('verify_saved')}: ${input.trim()}\n`));
-        }
-    }
 }
 
 async function cmdCompact(ctx: CommandContext) {
