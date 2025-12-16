@@ -664,10 +664,19 @@ export class ToolManager {
           let count = 0;
           
           while ((match = regex.exec(html)) !== null && count < 5) {
-              const link = match[1];
+              let link = match[1];
               const title = match[2].replace(/<[^>]+>/g, '').trim(); // Strip HTML tags
               const snippet = match[3].replace(/<[^>]+>/g, '').trim();
               
+              // Handle DDG redirects
+              if (link.includes('duckduckgo.com/l/?uddg=')) {
+                  try {
+                      const urlObj = new URL(link.startsWith('http') ? link : `https://${link}`);
+                      const uddg = urlObj.searchParams.get('uddg');
+                      if (uddg) link = decodeURIComponent(uddg);
+                  } catch {}
+              }
+
               if (link && !link.includes('duckduckgo.com')) { // Filter internal links
                   results += `### ${title}\nURL: ${link}\n${snippet}\n\n`;
                   count++;
