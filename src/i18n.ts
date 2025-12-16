@@ -168,7 +168,17 @@ export const I18N: Record<Language, Record<string, string>> = {
     'ui_nav_help': '(↑/↓ - навигация, Enter - выбор, Esc - отмена)',
     'ui_multiselect_hint': 'Введи номера через запятую (1,3) или Enter',
     'ui_selection': 'Выбор',
-    'ui_none': 'пусто'
+    'ui_none': 'пусто',
+
+    // Safety
+    'warning_home_dir': 'ВНИМАНИЕ: Вы находитесь в ДОМАШНЕЙ директории (~)!',
+    'warning_home_dir_desc': 'Это опасно. Агент может случайно изменить или удалить ваши личные файлы, а поиск будет очень медленным.',
+    'warning_action': 'Что будем делать?',
+    'action_create_workspace': 'Создать/Перейти в ~/Council_Workspace (Рекомендуется)',
+    'action_stay_home': 'Остаться здесь (Я понимаю риски)',
+    'action_exit': 'Выйти',
+    'workspace_created': 'Рабочая папка создана',
+    'cwd_switched': 'Рабочая директория изменена на'
   },
   en: {
     // Menu Commands
@@ -330,7 +340,17 @@ export const I18N: Record<Language, Record<string, string>> = {
     'ui_nav_help': '(↑/↓ - navigation, Enter - select, Esc - cancel)',
     'ui_multiselect_hint': 'Enter numbers separated by comma (1,3) or Enter',
     'ui_selection': 'Selection',
-    'ui_none': 'none'
+    'ui_none': 'none',
+
+    // Safety
+    'warning_home_dir': 'WARNING: You are in your HOME directory (~)!',
+    'warning_home_dir_desc': 'This is dangerous. The agent might accidentally modify or delete personal files, and search will be very slow.',
+    'warning_action': 'What should we do?',
+    'action_create_workspace': 'Create/Switch to ~/Council_Workspace (Recommended)',
+    'action_stay_home': 'Stay here (I understand the risks)',
+    'action_exit': 'Exit',
+    'workspace_created': 'Workspace created',
+    'cwd_switched': 'Working directory switched to'
   }
 };
 

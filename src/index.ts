@@ -12,6 +12,8 @@ import { emitKeypressEvents } from 'node:readline';
 import { exec } from 'node:child_process';
 import util from 'node:util';
 import path from 'node:path';
+import fs from 'node:fs';
+import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 
 const execAsync = util.promisify(exec);
@@ -21,20 +23,54 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const projectRoot = path.join(__dirname, '..');
 
+async function checkWorkingDir() {
+    const cwd = process.cwd();
+    const home = os.homedir();
+
+    if (cwd === home) {
+        console.log(chalk.yellow(`\n  ⚠️  ${t('warning_home_dir')}`));
+        console.log(chalk.gray(`  ${t('warning_home_dir_desc')}\n`));
+
+        const choice = await ui.select(t('warning_action'), [
+            { label: t('action_create_workspace'), value: 'create' },
+            { label: t('action_stay_home'), value: 'stay' },
+            { label: t('action_exit'), value: 'exit' }
+        ]);
+
+        if (choice === 'create') {
+            const workspace = path.join(home, 'Council_Workspace');
+            if (!fs.existsSync(workspace)) {
+                fs.mkdirSync(workspace, { recursive: true });
+                console.log(chalk.green(`  ✓ ${t('workspace_created')}: ${workspace}`));
+            }
+            process.chdir(workspace);
+            console.log(chalk.green(`  ✓ ${t('cwd_switched')}: ${workspace}\n`));
+        } else if (choice === 'exit') {
+            console.log(chalk.gray(`  ${t('bye')}`));
+            process.exit(0);
+        }
+    }
+}
+
 async function main() {
   const config = new ConfigManager();
   const history = new HistoryManager();
+  
+  // Set language FIRST to ensure UI strings are correct
+  setLanguage(config.getLanguage());
+
+  // Init UI early for the check
+  ui.initReadline();
+
+  // Safety Check: Home Directory
+  await checkWorkingDir();
+
   const council = new Council(config, history);
   
   // Reset stats on startup (new session)
   council.resetStats();
   
   const ctx = { config, history, council };
-
-  // Set language
-  setLanguage(config.getLanguage());
-
-  ui.initReadline();
 
   // Баннер
   printBanner();
