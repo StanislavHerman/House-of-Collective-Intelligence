@@ -42,7 +42,6 @@ export const COMMANDS = [
   { cmd: '/compact', desc: 'cmd_compact' },
   { cmd: '/lang', desc: 'cmd_lang' },
   { cmd: '/new', desc: 'cmd_new' },
-  { cmd: '/paste', desc: 'cmd_paste' },
   { cmd: '/doctor', desc: 'cmd_doctor' },
   { cmd: '/verify', desc: 'cmd_verify' },
   { cmd: '/exit', desc: 'cmd_exit' },
