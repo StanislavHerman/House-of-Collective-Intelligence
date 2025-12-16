@@ -47,6 +47,14 @@ export function estimateTokens(text: string): number {
   return Math.ceil(text.length / 2.5);
 }
 
+function getMimeType(base64: string): string {
+    if (base64.startsWith('/9j/')) return 'image/jpeg';
+    if (base64.startsWith('iVBORw0KGgo')) return 'image/png';
+    if (base64.startsWith('R0lGODdh') || base64.startsWith('R0lGODlh')) return 'image/gif';
+    if (base64.startsWith('UklGR')) return 'image/webp';
+    return 'image/jpeg'; // Default fallback
+}
+
 function prepareMessages(
   history: Message[], 
   prompt: string, 
@@ -267,7 +275,7 @@ async function sendOpenAICompatible(
 
       const contentParts = m.content.map((c: any) => {
           if (c.type === 'text') return { type: 'text', text: c.text };
-          if (c.type === 'image') return { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${c.data}` } };
+          if (c.type === 'image') return { type: 'image_url', image_url: { url: `data:${getMimeType(c.data)};base64,${c.data}` } };
           return null;
       }).filter(Boolean);
 
@@ -355,7 +363,7 @@ async function sendAnthropic(
               type: 'image', 
               source: { 
                   type: 'base64', 
-                  media_type: 'image/jpeg', 
+                  media_type: getMimeType(c.data) as any, 
                   data: c.data 
               } 
           };
@@ -403,7 +411,7 @@ async function sendGemini(
           role: m.role === 'assistant' ? 'model' : 'user',
           parts: m.content.map((c: any) => {
               if (c.type === 'text') return { text: c.text };
-              if (c.type === 'image') return { inlineData: { mimeType: 'image/jpeg', data: c.data } };
+              if (c.type === 'image') return { inlineData: { mimeType: getMimeType(c.data), data: c.data } };
               return null;
           }).filter(Boolean)
       }));
