@@ -16,7 +16,11 @@ export class ConfigManager {
 
   private load() {
     try {
-      fs.mkdirSync(CONFIG_DIR, { recursive: true });
+      // Secure directory: 700 (rwx------)
+      if (!fs.existsSync(CONFIG_DIR)) {
+          fs.mkdirSync(CONFIG_DIR, { recursive: true, mode: 0o700 });
+      }
+      
       if (fs.existsSync(CONFIG_FILE)) {
           const raw = fs.readFileSync(CONFIG_FILE, 'utf8');
           this.config = JSON.parse(raw);
@@ -115,8 +119,12 @@ export class ConfigManager {
 
   private save() {
     const tempFile = CONFIG_FILE + '.tmp';
-    fs.mkdirSync(CONFIG_DIR, { recursive: true });
-    fs.writeFileSync(tempFile, JSON.stringify(this.config, null, 2));
+    // Secure directory: 700
+    if (!fs.existsSync(CONFIG_DIR)) {
+        fs.mkdirSync(CONFIG_DIR, { recursive: true, mode: 0o700 });
+    }
+    // Secure file: 600 (rw-------)
+    fs.writeFileSync(tempFile, JSON.stringify(this.config, null, 2), { mode: 0o600 });
     fs.renameSync(tempFile, CONFIG_FILE);
   }
 
