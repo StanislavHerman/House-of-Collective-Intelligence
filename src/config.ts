@@ -33,15 +33,20 @@ export class ConfigManager {
           if (this.config.language === undefined) this.config.language = 'ru'; // Default RU
           
           // Permissions defaults
+          const defaultPerms = {
+              allow_browser: true,
+              allow_desktop: true,
+              allow_file_read: true,
+              allow_file_write: true,
+              allow_file_edit: true,
+              allow_command: true
+          };
+
           if (!this.config.permissions) {
-              this.config.permissions = {
-                  allow_browser: true,
-                  allow_desktop: true,
-                  allow_file_read: true,
-                  allow_file_write: true,
-                  allow_file_edit: true,
-                  allow_command: true
-              };
+              this.config.permissions = defaultPerms;
+          } else {
+              // Merge to ensure missing keys are added (migration)
+              this.config.permissions = { ...defaultPerms, ...this.config.permissions };
           }
       } else {
           // Миграция со старого конфига (если есть) или дефолт
