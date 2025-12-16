@@ -341,13 +341,17 @@ export async function select<T>(
 async function runRawMode<T>(fn: (stdin: NodeJS.ReadStream, stdout: NodeJS.WriteStream) => Promise<T>): Promise<T> {
     if (rl) rl.pause();
     
-    process.stdin.setRawMode(true);
+    if (process.stdin.isTTY) {
+        process.stdin.setRawMode(true);
+    }
     process.stdin.resume();
     
     try {
         return await fn(process.stdin, process.stdout);
     } finally {
-        process.stdin.setRawMode(false);
+        if (process.stdin.isTTY) {
+            process.stdin.setRawMode(false);
+        }
         // Do NOT pause stdin here, as RL needs it. 
         // But RL.resume() will call stdin.resume() anyway.
     }
@@ -358,7 +362,9 @@ export function waitForCancel(signal: AbortSignal, onCancel: () => void): () => 
     if (rl) rl.pause();
     
     // Setup raw mode listener
-    process.stdin.setRawMode(true);
+    if (process.stdin.isTTY) {
+        process.stdin.setRawMode(true);
+    }
     process.stdin.resume();
     
     if (!(process.stdin as any).isKeypressEventsEmitted) {
@@ -376,7 +382,9 @@ export function waitForCancel(signal: AbortSignal, onCancel: () => void): () => 
     // Return cleanup function
     return () => {
         process.stdin.removeListener('keypress', onKey);
-        process.stdin.setRawMode(false);
+        if (process.stdin.isTTY) {
+            process.stdin.setRawMode(false);
+        }
         if (rl) rl.resume();
     };
 }
