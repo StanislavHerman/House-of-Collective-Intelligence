@@ -328,6 +328,7 @@ export class ToolManager {
           cwd: this.cwd, 
           shell, 
           timeout: 0, // No hard timeout
+          maxBuffer: 1024 * 1024 * 10, // 10MB buffer to prevent "stdout maxBuffer exceeded"
           env,
           signal // Pass abort signal
       });
