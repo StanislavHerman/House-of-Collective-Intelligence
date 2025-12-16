@@ -6,99 +6,108 @@ import { t } from './i18n.js';
 
 // Singleton Readline Interface
 let rl: ReturnType<typeof createInterface> | null = null;
-let isStdinPatched = false;
+let inputProxy: PassThrough | null = null;
 
-function setupPasteInterceptor() {
-    if (isStdinPatched) return;
-    isStdinPatched = true;
+// Deep Input Sanitizer using Proxy Stream
+// We do NOT give readline the real stdin. We give it a sanitized stream.
+function setupInputProxy() {
+    if (inputProxy) return inputProxy;
 
-    // Enable Bracketed Paste Mode
+    inputProxy = new PassThrough();
+    
+    // Fake TTY for Readline
+    (inputProxy as any).isTTY = process.stdin.isTTY;
+    (inputProxy as any).setRawMode = (mode: boolean) => {
+        if (process.stdin.setRawMode) {
+            return process.stdin.setRawMode(mode);
+        }
+        return process.stdin;
+    };
+
+    // Enable Bracketed Paste Mode on real stdout
     process.stdout.write('\x1b[?2004h');
 
-    const originalEmit = process.stdin.emit;
+    // State
     let inPasteMode = false;
     let pasteBuffer = '';
     let pasteTimeout: any = null;
 
-    (process.stdin as any).emit = function(event: string, ...args: any[]) {
-        if (event === 'data' && args[0]) {
-            const chunk = args[0].toString();
+    // Handle Real Input
+    process.stdin.on('data', (chunk: Buffer) => {
+        const str = chunk.toString();
+
+        // 1. Bracketed Paste Start
+        if (str.includes('\x1b[200~')) {
+            inPasteMode = true;
+            pasteBuffer = '';
             
-            // --- 1. Bracketed Paste Logic ---
-            if (chunk.includes('\x1b[200~')) {
-                inPasteMode = true;
-                pasteBuffer = '';
-                const parts = chunk.split('\x1b[200~');
-                if (parts[1]) pasteBuffer += parts[1];
-                
-                if (pasteTimeout) clearTimeout(pasteTimeout);
-                pasteTimeout = setTimeout(() => {
-                    if (inPasteMode) {
-                        inPasteMode = false;
-                        // Flush safe
-                        const safe = pasteBuffer.replace(/(\r\n|\n|\r)/g, ' ');
-                        (originalEmit as any).call(process.stdin, 'data', Buffer.from(safe));
-                        pasteBuffer = '';
-                    }
-                }, 500);
-                
-                return true; 
-            }
+            const parts = str.split('\x1b[200~');
+            if (parts[1]) pasteBuffer += parts[1];
 
-            if (inPasteMode) {
-                if (chunk.includes('\x1b[201~')) {
+            // Safety timeout
+            if (pasteTimeout) clearTimeout(pasteTimeout);
+            pasteTimeout = setTimeout(() => {
+                if (inPasteMode) {
                     inPasteMode = false;
-                    if (pasteTimeout) clearTimeout(pasteTimeout);
-
-                    const parts = chunk.split('\x1b[201~');
-                    pasteBuffer += parts[0];
-                    
-                    // Sanitize: Flatten newlines to spaces
-                    let sanitized = pasteBuffer.replace(/(\r\n|\n|\r)/g, ' ');
-                    
-                    (originalEmit as any).call(process.stdin, 'data', Buffer.from(sanitized));
-                    
-                    if (parts[1]) {
-                        (originalEmit as any).call(process.stdin, 'data', Buffer.from(parts[1]));
-                    }
+                    // Flush buffer sanitized
+                    const safe = pasteBuffer.replace(/(\r\n|\n|\r)/g, ' ');
+                    inputProxy!.write(safe);
                     pasteBuffer = '';
-                    return true;
-                } else {
-                    pasteBuffer += chunk;
-                    return true;
                 }
-            }
-
-            // --- 2. Heuristic Fallback (For terminals without Bracketed Paste) ---
-            // If chunk is "fast" (>3 chars) and contains newlines, it's likely a paste.
-            // Normal typing is 1 char at a time.
-            if (chunk.length > 3 && /[\r\n]/.test(chunk)) {
-                // Treat as paste -> Sanitize
-                // 1. Strip trailing newline (prevents immediate submit)
-                let safe = chunk.replace(/[\r\n]+$/, '');
-                // 2. Flatten internal newlines
-                safe = safe.replace(/(\r\n|\n|\r)/g, ' ');
-                
-                (originalEmit as any).call(process.stdin, 'data', Buffer.from(safe));
-                return true;
-            }
+            }, 500);
+            return;
         }
-        
-        return originalEmit.apply(process.stdin, arguments as any);
-    };
+
+        // 2. In Paste Mode
+        if (inPasteMode) {
+            if (str.includes('\x1b[201~')) {
+                inPasteMode = false;
+                if (pasteTimeout) clearTimeout(pasteTimeout);
+
+                const parts = str.split('\x1b[201~');
+                pasteBuffer += parts[0];
+
+                // Sanitize and Flush
+                const safe = pasteBuffer.replace(/(\r\n|\n|\r)/g, ' ');
+                inputProxy!.write(safe);
+                
+                // Trailing content (rare)
+                if (parts[1]) {
+                     inputProxy!.write(parts[1]);
+                }
+                pasteBuffer = '';
+            } else {
+                pasteBuffer += str;
+            }
+            return;
+        }
+
+        // 3. Heuristic: Fast Multiline Input (for terminals without bracketed paste)
+        // If chunk has newlines and length > 3, it's likely a paste
+        if (str.length > 3 && /[\r\n]/.test(str)) {
+             // Strip trailing newline to prevent auto-submit
+             // Replace internal newlines with space
+             let safe = str.replace(/[\r\n]+$/, ''); // Remove END enter
+             safe = safe.replace(/(\r\n|\n|\r)/g, ' '); // Flatten others
+             inputProxy!.write(safe);
+             return;
+        }
+
+        // 4. Normal Input -> Pass through
+        inputProxy!.write(chunk);
+    });
+
+    process.stdin.resume();
+    return inputProxy;
 }
 
 export function initReadline() {
   if (rl) return;
   
-  // Ensure interceptor is set up (only runs once)
-  setupPasteInterceptor();
-
-  // Ensure stdin is flowing
-  process.stdin.resume();
+  const input = setupInputProxy();
 
   rl = createInterface({
-    input: process.stdin, 
+    input: input as any, // TS Cast as generic Readable
     output: process.stdout,
     terminal: true,
     historySize: 200
