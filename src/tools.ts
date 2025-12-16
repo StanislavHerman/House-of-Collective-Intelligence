@@ -362,7 +362,13 @@ export class ToolManager {
       if (error.signal === 'SIGTERM' || error.name === 'AbortError' || error.code === 'ABORT_ERR') {
           return { output: '', error: 'Command aborted by user.' };
       }
-      return { output: error.stdout || '', error: error.message + (error.stderr ? '\nSTDERR: ' + error.stderr : '') };
+      
+      let errorMsg = error.message;
+      if (error.code) {
+          errorMsg += ` (Exit Code: ${error.code})`;
+      }
+      
+      return { output: error.stdout || '', error: errorMsg + (error.stderr ? '\nSTDERR: ' + error.stderr : '') };
     }
   }
 
@@ -593,7 +599,8 @@ export class ToolManager {
               // --heading: print filename above matches (optional)
               const cmd = `git grep -In "${safeQuery}" "${dirPath}" | head -n 100`;
               const res = await this.runCommand(cmd);
-              if (!res.error || (res.error && !res.error.includes('exit code 1'))) { // exit code 1 means no matches
+              // Check for exit code 1 explicitly
+              if (!res.error || (res.error && res.error.includes('(Exit Code: 1)'))) { 
                   if (res.output) return res;
                   return { output: 'No matches found (git grep).' };
               }
@@ -618,7 +625,7 @@ export class ToolManager {
           const cmd = `grep -rInH "${safeQuery}" ${excludeArgs} "${dirPath}" | head -n 100`; 
           
           const res = await this.runCommand(cmd);
-          if (res.error && res.error.includes('exit code 1')) {
+          if (res.error && res.error.includes('(Exit Code: 1)')) {
               return { output: 'No matches found.' };
           }
           return res;
