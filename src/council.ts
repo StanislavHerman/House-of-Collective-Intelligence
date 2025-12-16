@@ -657,21 +657,21 @@ export class Council {
     const results: any[] = [];
     
     // Regex для bash (command)
-    // Allow ```bash or ```sh or just ```command
-    const cmdRegex = /```(?:bash|sh|zsh|command)\s*([\s\S]*?)\s*```/gi;
+    // Allow ```bash or ```sh or just ```command or ``` bash
+    const cmdRegex = /```\s*(?:bash|sh|zsh|command)\s*([\s\S]*?)\s*```/gi;
     let match;
     while ((match = cmdRegex.exec(text)) !== null) {
       results.push({ type: 'command', content: match[1].trim(), arg: '' });
     }
 
     // Regex для system_diagnostics
-    const sysDiagRegex = /```system_diagnostics\s*```/gi;
+    const sysDiagRegex = /```\s*system_diagnostics\s*```/gi;
     while ((match = sysDiagRegex.exec(text)) !== null) {
         results.push({ type: 'system_diagnostics', content: '', arg: '' });
     }
 
     // Regex для ios:config
-    const iosConfigRegex = /```ios:config\s*([\s\S]*?)\s*```/gi;
+    const iosConfigRegex = /```\s*ios:config\s*([\s\S]*?)\s*```/gi;
     while ((match = iosConfigRegex.exec(text)) !== null) {
         results.push({ type: 'ios_config', content: match[1].trim(), arg: '' });
     }
@@ -686,14 +686,14 @@ export class Council {
 
     // Regex для tree:path
     // Allow: tree: path OR tree path OR tree\npath
-    const treeRegex = /```tree[:\s]?\s*([\s\S]*?)\s*```/gi;
+    const treeRegex = /```\s*tree[:\s]?\s*([\s\S]*?)\s*```/gi;
     while ((match = treeRegex.exec(text)) !== null) {
         const content = match[1].trim();
         if (content) results.push({ type: 'tree', content, arg: '' });
     }
 
     // Regex для search:query
-    const searchRegex = /```search[:\s]?\s*([\s\S]*?)\s*```/gi;
+    const searchRegex = /```\s*search[:\s]?\s*([\s\S]*?)\s*```/gi;
     while ((match = searchRegex.exec(text)) !== null) {
         const content = match[1].trim();
         if (content) results.push({ type: 'search', content, arg: '' });
@@ -707,38 +707,38 @@ export class Council {
     }
     
     // Regex для read:path
-    const readRegex = /```read[:\s]?\s*([\s\S]*?)\s*```/gi;
+    const readRegex = /```\s*read[:\s]?\s*([\s\S]*?)\s*```/gi;
     while ((match = readRegex.exec(text)) !== null) {
       const content = match[1].trim();
       if (content) results.push({ type: 'read', content, arg: '' });
     }
     
     // Regex для browser:open
-    const bOpenRegex = /```browser:open[:\s]?\s*([\s\S]*?)\s*```/gi;
+    const bOpenRegex = /```\s*browser:open[:\s]?\s*([\s\S]*?)\s*```/gi;
     while ((match = bOpenRegex.exec(text)) !== null) {
       results.push({ type: 'browser_open', content: match[1].trim(), arg: '' });
     }
 
     // Regex для browser:act
-    const bActRegex = /```browser:act\s*([\s\S]*?)\s*```/gi;
+    const bActRegex = /```\s*browser:act\s*([\s\S]*?)\s*```/gi;
     while ((match = bActRegex.exec(text)) !== null) {
       results.push({ type: 'browser_act', content: match[1].trim(), arg: '' });
     }
     
     // Regex для browser:search
-    const bSearchRegex = /```browser:search\s*(.*?)\s*```/gi;
+    const bSearchRegex = /```\s*browser:search\s*(.*?)\s*```/gi;
     while ((match = bSearchRegex.exec(text)) !== null) {
       results.push({ type: 'browser_search', content: match[1].trim(), arg: '' });
     }
     
     // Regex for desktop:screenshot
-    const dShotRegex = /```desktop:screenshot\s*(.*?)\s*```/gi;
+    const dShotRegex = /```\s*desktop:screenshot\s*(.*?)\s*```/gi;
     while ((match = dShotRegex.exec(text)) !== null) {
       results.push({ type: 'desktop_screenshot', content: match[1].trim(), arg: '' });
     }
 
     // Regex for desktop:act
-    const dActRegex = /```desktop:act\s*([\s\S]*?)\s*```/gi;
+    const dActRegex = /```\s*desktop:act\s*([\s\S]*?)\s*```/gi;
     while ((match = dActRegex.exec(text)) !== null) {
       results.push({ type: 'desktop_act', content: match[1].trim(), arg: '' });
     }
