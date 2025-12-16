@@ -735,22 +735,19 @@ export class Council {
     // SORT BY INDEX to preserve execution order
     results.sort((a, b) => a.index - b.index);
 
-    // Debug Log found tools
-    if (results.length > 0) {
-        console.log('[Parser] Raw tools found:', results.length, results.map(r => r.type));
-    } else if (text.includes('```')) {
-        console.log('[Parser] Warning: Code blocks detected but no tools parsed. Check regex/format.');
-        // Log first 100 chars of a block for debug
-        const firstBlock = text.split('```')[1];
-        if (firstBlock) console.log('[Parser] First block content:', firstBlock.substring(0, 50) + '...');
-    }
+    // Debug Log found tools (commented out for cleaner UI)
+    // if (results.length > 0) {
+    //    console.log('[Parser] Raw tools found:', results.length, results.map(r => r.type));
+    // } else if (text.includes('```')) {
+    //    console.log('[Parser] Warning: Code blocks detected but no tools parsed. Check regex/format.');
+    // }
     
     // Filter out obvious placeholders/examples
     return results.filter(r => {
         const p = (r.arg || r.content || '').toLowerCase();
         // Check filtering
         if (p.includes('path/to/') || p.includes('/path/to') || p === 'file.txt' || p === 'example.com') {
-            console.log(`[Parser] Filtered placeholder tool: ${r.type} ${p}`);
+            // console.log(`[Parser] Filtered placeholder tool: ${r.type} ${p}`);
             return false;
         }
         // Also ignore if content is purely "..." (example block)
