@@ -614,6 +614,11 @@ export class Council {
               text = text.replace(regexEn, '');
               text = text.replace(regexEval, '');
               
+              // Strip tool blocks to prevent repetition loops
+              // Matches ```toolname ... ``` blocks
+              const toolsRegex = /```\s*(?:bash|sh|zsh|command|shell|term|terminal|console|cmd|system_diagnostics|ios:config|edit|tree|search|file|read|browser:\w+|desktop:\w+)[\s\S]*?```/gi;
+              text = text.replace(toolsRegex, '[Tool Executed]');
+
               return { ...msg, text };
           }
           return msg;
