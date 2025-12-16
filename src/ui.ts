@@ -12,20 +12,87 @@ export function initReadline() {
   if (rl) return;
   
   // Enable Bracketed Paste Mode
-  // process.stdout.write('\x1b[?2004h');
+  process.stdout.write('\x1b[?2004h');
 
   // Ensure stdin is flowing
   process.stdin.resume();
 
+  // Robust Paste Interceptor using emit monkey-patch
+  // This is safer than _ttyWrite because it captures the raw stream
+  const originalEmit = process.stdin.emit;
+  let inPasteMode = false;
+  let pasteBuffer = '';
+  let pasteTimeout: any = null;
+
+  (process.stdin as any).emit = function(event: string, ...args: any[]) {
+      if (event === 'data' && args[0]) {
+          const chunk = args[0].toString();
+          
+          // Detect Paste Start
+          if (chunk.includes('\x1b[200~')) {
+              inPasteMode = true;
+              pasteBuffer = '';
+              // If start tag is followed by content in same chunk
+              const parts = chunk.split('\x1b[200~');
+              // parts[0] is pre-paste, parts[1] is content
+              if (parts[1]) {
+                  pasteBuffer += parts[1];
+              }
+              
+              // Set fallback timeout (if end tag never comes)
+              if (pasteTimeout) clearTimeout(pasteTimeout);
+              pasteTimeout = setTimeout(() => {
+                  if (inPasteMode) {
+                      inPasteMode = false;
+                      // Flush what we have, stripping newlines just in case
+                      const safe = pasteBuffer.replace(/(\r\n|\n|\r)/g, ' ');
+                      (originalEmit as any).call(process.stdin, 'data', Buffer.from(safe));
+                      pasteBuffer = '';
+                  }
+              }, 500); // 500ms max for a paste operation
+              
+              return true; // Stop propagation
+          }
+
+          // Detect Paste End
+          if (inPasteMode) {
+              if (chunk.includes('\x1b[201~')) {
+                  inPasteMode = false;
+                  if (pasteTimeout) clearTimeout(pasteTimeout);
+
+                  const parts = chunk.split('\x1b[201~');
+                  pasteBuffer += parts[0]; // Content before end tag
+                  
+                  // SANITIZE: Replace newlines with spaces to prevent immediate submit
+                  const sanitized = pasteBuffer.replace(/(\r\n|\n|\r)/g, ' ');
+                  
+                  // Emit sanitized paste
+                  (originalEmit as any).call(process.stdin, 'data', Buffer.from(sanitized));
+                  
+                  // Emit any post-paste content (rare but possible)
+                  if (parts[1]) {
+                      (originalEmit as any).call(process.stdin, 'data', Buffer.from(parts[1]));
+                  }
+                  
+                  pasteBuffer = '';
+                  return true;
+              } else {
+                  // Still inside paste, just buffer
+                  pasteBuffer += chunk;
+                  return true;
+              }
+          }
+      }
+      
+      return originalEmit.apply(process.stdin, arguments as any);
+  };
+
   rl = createInterface({
-    input: process.stdin, // Revert to standard stdin
+    input: process.stdin, 
     output: process.stdout,
     terminal: true,
     historySize: 200
   });
-
-  // Hook _ttyWrite to intercept paste events safely
-  // interceptPaste(rl);
 
   // Handle global SIGINT only if we are NOT in a question callback
   // (question callback handles it locally)
@@ -35,80 +102,10 @@ export function initReadline() {
   });
 }
 
-// Internal hook for paste handling
-function interceptPaste(rlInterface: any) {
-    const originalTtyWrite = rlInterface._ttyWrite;
-    let inPaste = false;
-    let pasteBuffer = '';
-    let lastPasteTime = 0;
-
-    rlInterface._ttyWrite = function(s: string, key: any) {
-        const str = s || '';
-
-        // Paste Start
-        if (str.includes('\x1b[200~')) {
-            inPaste = true;
-            pasteBuffer = '';
-            // If the start tag is mixed with content, handle it?
-            // Usually it comes as a distinct sequence or start of chunk.
-            // Simplified: just switch mode.
-            // Remove the tag from str
-            const clean = str.replace(/\x1b\[200~/g, '');
-            if (clean) pasteBuffer += clean;
-            return;
-        }
-
-        // Paste End
-        if (str.includes('\x1b[201~')) {
-            inPaste = false;
-            lastPasteTime = Date.now();
-            
-            const parts = str.split('\x1b[201~');
-            pasteBuffer += parts[0];
-            
-            // Sanitize Buffer
-            // 1. Strip trailing newlines
-            pasteBuffer = pasteBuffer.replace(/(\r\n|\n|\r)+$/, '');
-            // 2. Flatten internal newlines
-            pasteBuffer = pasteBuffer.replace(/(\r\n|\n|\r)/g, ' ');
-
-            // Inject sanitized buffer
-            if (pasteBuffer) {
-                originalTtyWrite.call(rlInterface, pasteBuffer, key);
-            }
-            
-            // Handle suffix (data after end tag)
-            let suffix = parts[1] || '';
-            // Strip leading newlines from suffix (debounce)
-            suffix = suffix.replace(/^(\r\n|\n|\r)+/, '');
-            
-            if (suffix) {
-                originalTtyWrite.call(rlInterface, suffix, key);
-            }
-            
-            pasteBuffer = '';
-            return;
-        }
-
-        if (inPaste) {
-            pasteBuffer += str;
-            return; // Suppress output
-        }
-
-        // Normal Input Debounce (for loose newlines right after paste)
-        if (Date.now() - lastPasteTime < 100 && /^(\r\n|\n|\r)+$/.test(str)) {
-             return; // Ignore ghost newline
-        }
-
-        // Pass through to original
-        originalTtyWrite.call(rlInterface, s, key);
-    };
-}
-
 export function closeReadline() {
   if (rl) {
       // Disable Bracketed Paste Mode
-      // process.stdout.write('\x1b[?2004l');
+      process.stdout.write('\x1b[?2004l');
       rl.close();
       rl = null;
   }
