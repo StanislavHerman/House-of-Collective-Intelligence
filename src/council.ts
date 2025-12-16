@@ -536,6 +536,9 @@ export class Council {
             } else if (tool.type === 'system_diagnostics') {
                 const res = await this.tools.runDiagnostics();
                 toolOutputMsg += `System Diagnostics:\n${res.output}\nError: ${res.error || ''}\n\n`;
+            } else if (tool.type === 'ios_config') {
+                const res = await this.tools.iosConfig(tool.content);
+                toolOutputMsg += `iOS Config:\n${res.output}\nError: ${res.error || ''}\n\n`;
             }
         }
         
@@ -650,7 +653,7 @@ export class Council {
       }
   }
 
-  private parseTools(text: string): { type: 'command' | 'file' | 'edit' | 'read' | 'tree' | 'search' | 'browser_open' | 'browser_search' | 'browser_act' | 'desktop_screenshot' | 'desktop_act' | 'system_diagnostics', content: string, arg: string }[] {
+  private parseTools(text: string): { type: 'command' | 'file' | 'edit' | 'read' | 'tree' | 'search' | 'browser_open' | 'browser_search' | 'browser_act' | 'desktop_screenshot' | 'desktop_act' | 'system_diagnostics' | 'ios_config', content: string, arg: string }[] {
     const results: any[] = [];
     
     // Regex для bash (command)
@@ -665,6 +668,12 @@ export class Council {
     const sysDiagRegex = /```system_diagnostics\s*```/gi;
     while ((match = sysDiagRegex.exec(text)) !== null) {
         results.push({ type: 'system_diagnostics', content: '', arg: '' });
+    }
+
+    // Regex для ios:config
+    const iosConfigRegex = /```ios:config\s*([\s\S]*?)\s*```/gi;
+    while ((match = iosConfigRegex.exec(text)) !== null) {
+        results.push({ type: 'ios_config', content: match[1].trim(), arg: '' });
     }
     
     // Regex для edit:path

@@ -34,7 +34,8 @@
     "cli-table3": "^0.6.5",
     "form-data": "^4.0.5",
     "ora": "^8.1.0",
-    "puppeteer": "^24.33.0"
+    "puppeteer": "^24.33.0",
+    "xcode": "^3.0.1"
   },
   "devDependencies": {
     "@types/node": "^22.13.1",

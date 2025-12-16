@@ -5,6 +5,9 @@ import util from 'node:util';
 import { BrowserManager } from './browser.js';
 import os from 'node:os';
 import axios from 'axios';
+import { createRequire } from 'node:module';
+const require = createRequire(import.meta.url);
+const xcode = require('xcode');
 
 const execAsync = util.promisify(exec);
 
@@ -97,6 +100,14 @@ export const TOOLS_DEF = `
    - Описание: Запустить полную самодиагностику системы (файлы, shell, интернет, git).
    - Формат вызова:
      \`\`\`system_diagnostics\`\`\`
+
+13. ios_config
+   - Описание: Безопасное чтение/изменение настроек iOS проекта (.pbxproj).
+   - Действия: list, get, set.
+   - Формат вызова:
+     \`\`\`ios:config list <путь/к/project.pbxproj>\`\`\`
+     \`\`\`ios:config get <путь/к/project.pbxproj> <ключ> [target]\`\`\`
+     \`\`\`ios:config set <путь/к/project.pbxproj> <ключ> <значение> [target]\`\`\`
 `;
 
 export class ToolManager {
@@ -107,6 +118,85 @@ export class ToolManager {
   async close() {
       await this.browser.close();
   }
+
+  // ... (existing methods: runDiagnostics, resolvePath, runCommand, writeFile, editFile, readFile, treeView, searchSmart, browserOpen, browserSearch, browserAct, desktopScreenshot, desktopAct) ...
+
+  async iosConfig(argsString: string): Promise<ToolResult> {
+      try {
+          // Parse args: action projectPath [key] [value/target]
+          // Simple space split might fail if path has spaces.
+          // Let's assume standard shell-like args or simple splits for now.
+          // Better: use regex to capture path.
+          
+          const args = argsString.trim().split(/\s+/);
+          const action = args[0];
+          const projectPath = args[1];
+          
+          if (!action || !projectPath) {
+              return { output: '', error: 'Usage: ios:config <action> <project.pbxproj> [args...]' };
+          }
+
+          const targetFile = this.resolvePath(projectPath);
+          if (!await fs.access(targetFile).then(() => true).catch(() => false)) {
+               return { output: '', error: `Project file not found: ${targetFile}` };
+          }
+
+          const project = xcode.project(targetFile);
+          
+          // Promisify parse
+          await new Promise<void>((resolve, reject) => {
+              project.parse((err: any) => {
+                  if (err) reject(err);
+                  else resolve();
+              });
+          });
+
+          if (action === 'list') {
+              const targets = project.pbxNativeTargetSection();
+              const configs = project.pbxXCBuildConfigurationSection();
+              
+              let report = `Targets:\n`;
+              for (const key in targets) {
+                  if (!key.endsWith('_comment')) {
+                      report += ` - ${targets[key].name} (UUID: ${key})\n`;
+                  }
+              }
+              
+              report += `\nBuild Configurations:\n`;
+              // This is raw, maybe just list configuration names?
+              // Getting build config names is tricky structure traversing
+              return { output: report };
+          }
+
+          if (action === 'get') {
+              const key = args[2];
+              if (!key) return { output: '', error: 'Missing key for get' };
+              
+              // getBuildProperty returns the value
+              const val = project.getBuildProperty(key);
+              return { output: `Value for ${key}: ${val}` };
+          }
+
+          if (action === 'set') {
+              const key = args[2];
+              const val = args[3];
+              if (!key || val === undefined) return { output: '', error: 'Missing key or value for set' };
+              
+              project.updateBuildProperty(key, val);
+              
+              const newContent = project.writeSync();
+              await fs.writeFile(targetFile, newContent);
+              
+              return { output: `Successfully set ${key} = ${val} in ${projectPath}` };
+          }
+
+          return { output: '', error: `Unknown action: ${action}` };
+
+      } catch (e: any) {
+          return { output: '', error: `iOS Config Error: ${e.message}` };
+      }
+  }
+
 
   async runDiagnostics(): Promise<ToolResult> {
       const report: string[] = [];
