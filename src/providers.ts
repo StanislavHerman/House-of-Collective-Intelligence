@@ -259,12 +259,29 @@ async function sendOpenAICompatible(
   // Internal: [{ type: 'text', text: '...' }, { type: 'image', data: 'base64...' }]
   // OpenAI: content: "text" OR content: [{ type: "text", text: "..." }, { type: "image_url", image_url: { url: "..." } }]
   
+  const isOpenRouterClaude = type === 'openrouter' && model.toLowerCase().includes('claude');
+
   const formattedMessages = messages.map(m => {
       // System message is usually just text for OpenAI, but GPT-4o supports array?
       // Best to keep system as string if possible, but let's see.
       // Usually system is just text.
       if (m.role === 'system') {
           const text = m.content.filter((c: any) => c.type === 'text').map((c: any) => c.text).join('\n');
+          
+          // For OpenRouter + Claude, we use Prompt Caching
+          if (isOpenRouterClaude) {
+              return { 
+                  role: 'system', 
+                  content: [
+                      { 
+                          type: 'text', 
+                          text: text,
+                          cache_control: { type: 'ephemeral' }
+                      }
+                  ] 
+              };
+          }
+          
           return { role: 'system', content: text };
       }
 
@@ -376,18 +393,29 @@ async function sendAnthropic(
       return { role: m.role, content };
   });
 
+  // Enable Prompt Caching (Beta)
+  // We cache the system prompt (which includes heavy tool definitions).
+  const systemWithCache = [
+      {
+          type: 'text',
+          text: systemPrompt,
+          cache_control: { type: 'ephemeral' }
+      }
+  ];
+
   const res = await axios.post(
     `${API_URLS.anthropic}/messages`,
     {
       model,
       max_tokens: 8192,
-      system: systemPrompt,
+      system: systemWithCache,
       messages: chatMessages
     },
     {
       headers: {
         'x-api-key': apiKey,
         'anthropic-version': '2023-06-01',
+        'anthropic-beta': 'prompt-caching-2024-07-31',
         'Content-Type': 'application/json'
       },
       timeout: getTimeoutForModel(model),
