@@ -703,12 +703,19 @@ export class Council {
           // Silently updated stats (User requested no output in chat)
           
       } catch (e: any) {
-          const snippet = rawJson.length > 50 ? rawJson.substring(0, 50) + '...' : rawJson;
-          if (onProgress) onProgress({ type: 'error', message: `⚠️ Secretary error: ${e.message} (Content: "${snippet}")` });
+          // Log full rawJson for debugging
+          console.warn(`[Secretary] JSON Parse Error: ${e.message}`);
+          console.warn(`[Secretary] Raw Content:\n${rawJson}`);
+          
+          const snippet = rawJson.length > 100 ? rawJson.substring(0, 100) + '...' : rawJson;
+          if (onProgress) onProgress({ type: 'error', message: `⚠️ Ошибка Секретаря: Не удалось прочитать ответ (${e.message}). См. консоль для деталей.` });
       }
   }
 
   private extractJson(text: string): any {
+      // Strip Markdown code blocks if present
+      text = text.replace(/```json/g, '').replace(/```/g, '');
+      
       let startIndex = text.indexOf('{');
       if (startIndex === -1) return null;
 
@@ -758,10 +765,24 @@ export class Council {
   }
 
   private repairJson(text: string): string | null {
+      // Strip Markdown
+      text = text.replace(/```json/g, '').replace(/```/g, '');
+
       const start = text.indexOf('{');
       if (start === -1) return null;
       
-      let working = text.substring(start);
+      let working = text.substring(start).trim();
+      
+      // Fix trailing structure before closing
+      // 1. If ends with comma, remove it
+      if (working.endsWith(',')) {
+          working = working.slice(0, -1);
+      }
+      // 2. If ends with colon (incomplete key-value), add null
+      if (working.endsWith(':')) {
+          working += ' null';
+      }
+      
       const stack: string[] = [];
       let inString = false;
       let escape = false;
@@ -794,6 +815,16 @@ export class Council {
       
       // Close open structures
       if (inString) working += '"';
+      
+      // Re-check trailing comma/colon after closing string
+      const trimmed = working.trim();
+      if (trimmed.endsWith(',') && stack.length > 0) {
+           working = trimmed.slice(0, -1);
+      }
+      if (trimmed.endsWith(':') && stack.length > 0) {
+           working = trimmed + ' null';
+      }
+
       while (stack.length > 0) {
           working += stack.pop();
       }
