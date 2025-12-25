@@ -198,10 +198,11 @@ export class ConfigManager {
   }
 
   setApiKey(type: string, key: string) {
-    this.config.apiKeys[type] = key;
+    const trimmedKey = key.trim();
+    this.config.apiKeys[type] = trimmedKey;
     
     // If key is deleted (empty), remove all agents with this provider
-    if (!key) {
+    if (!trimmedKey) {
         const initialCount = this.config.agents.length;
         this.config.agents = this.config.agents.filter(a => a.providerType !== type);
         

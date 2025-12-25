@@ -168,7 +168,10 @@ export async function sendToProvider(
   const model = agent.model;
   const type = agent.providerType;
   
-  if (!apiKey) {
+  // Safety: trim key to avoid header errors
+  const safeApiKey = apiKey ? apiKey.trim() : '';
+
+  if (!safeApiKey) {
     return { providerId: agent.id, model, text: '', error: 'Нет API ключа' };
   }
 
@@ -183,12 +186,12 @@ export async function sendToProvider(
     attempts++;
     try {
       if (type === 'anthropic') {
-        return await sendAnthropic(apiKey, messages, model, systemPrompt, agent.id, signal);
+        return await sendAnthropic(safeApiKey, messages, model, systemPrompt, agent.id, signal);
       } else if (type === 'gemini') {
-        return await sendGemini(apiKey, messages, model, systemPrompt, agent.id, signal);
+        return await sendGemini(safeApiKey, messages, model, systemPrompt, agent.id, signal);
       } else {
         // openai, deepseek, grok, perplexity, openrouter
-        return await sendOpenAICompatible(type, apiKey, messages, model, systemPrompt, agent.id, signal);
+        return await sendOpenAICompatible(type, safeApiKey, messages, model, systemPrompt, agent.id, signal);
       }
     } catch (error: any) {
       if (axios.isCancel(error) || signal?.aborted) {
@@ -499,15 +502,18 @@ export async function getBalance(type: string, apiKey: string): Promise<string |
 
 export async function testApiKey(type: string, apiKey: string): Promise<{ valid: boolean, error?: string }> {
   try {
+    const safeKey = apiKey.trim();
+    if (!safeKey) return { valid: false, error: 'Empty key' };
+
     if (type === 'gemini') {
-      await axios.get(`${API_URLS.gemini}/models?key=${apiKey}`, { timeout: 10000 });
+      await axios.get(`${API_URLS.gemini}/models?key=${safeKey}`, { timeout: 10000 });
       return { valid: true };
     }
     if (type === 'anthropic') {
       await axios.post(
         `${API_URLS.anthropic}/messages`,
         { model: 'claude-3-5-haiku-20241022', max_tokens: 1, messages: [{ role: 'user', content: 'hi' }] },
-        { headers: { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' }, timeout: 10000 }
+        { headers: { 'x-api-key': safeKey, 'anthropic-version': '2023-06-01' }, timeout: 10000 }
       );
       return { valid: true };
     }
@@ -522,7 +528,7 @@ export async function testApiKey(type: string, apiKey: string): Promise<{ valid:
         },
         {
           headers: {
-            Authorization: `Bearer ${apiKey}`,
+            Authorization: `Bearer ${safeKey}`,
             'Content-Type': 'application/json'
           },
           timeout: 10000
@@ -532,7 +538,7 @@ export async function testApiKey(type: string, apiKey: string): Promise<{ valid:
     }
     const baseUrl = API_URLS[type] || API_URLS.openai;
     await axios.get(`${baseUrl}/models`, {
-      headers: { Authorization: `Bearer ${apiKey}` },
+      headers: { Authorization: `Bearer ${safeKey}` },
       timeout: 10000
     });
     return { valid: true };
