@@ -657,14 +657,33 @@ export class Council {
           const res = await sendToProvider(secretary, apiKey || '', prompt, [], t('sys_secretary'));
           
           let rawJson = res.text.trim();
-          rawJson = rawJson.replace(/^```json\s*/, '').replace(/^```\s*/, '').replace(/\s*```$/, '');
-          const firstBrace = rawJson.indexOf('{');
-          const lastBrace = rawJson.lastIndexOf('}');
-          if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-              rawJson = rawJson.substring(firstBrace, lastBrace + 1);
+          if (!rawJson) {
+             console.warn(`[Secretary] Empty response from ${secretary.model}`);
+             return;
           }
 
-          const evalJson = JSON.parse(rawJson);
+          // Robust JSON extraction
+          const firstBrace = rawJson.indexOf('{');
+          const lastBrace = rawJson.lastIndexOf('}');
+          
+          if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+              rawJson = rawJson.substring(firstBrace, lastBrace + 1);
+          } else {
+              // If no braces found, it's definitely not valid JSON
+              console.warn(`[Secretary] Invalid format (no JSON block found): ${rawJson.substring(0, 50)}...`);
+              return;
+          }
+
+          let evalJson: any;
+          try {
+              evalJson = JSON.parse(rawJson);
+          } catch (e: any) {
+              // Try to fix common errors (like trailing commas) if simple parse fails?
+              // For now just log safely
+              console.warn(`[Secretary] JSON Parse Error: ${e.message}. Raw: ${rawJson.substring(0, 100)}...`);
+              return;
+          }
+
           let updateCount = 0;
           
           for (const [agentId, result] of Object.entries(evalJson)) {
