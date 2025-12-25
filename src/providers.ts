@@ -467,11 +467,12 @@ async function sendGemini(
 // --- Utils ---
 
 export async function getBalance(type: string, apiKey: string): Promise<string | null> {
-  if (!apiKey) return null;
+  const safeKey = apiKey ? apiKey.trim() : '';
+  if (!safeKey) return null;
   try {
     if (type === 'deepseek') {
       const res = await axios.get('https://api.deepseek.com/user/balance', {
-        headers: { Authorization: `Bearer ${apiKey}` },
+        headers: { Authorization: `Bearer ${safeKey}` },
         timeout: 5000
       });
       const usd = res.data?.balance_infos?.find((b: any) => b.currency === 'USD');
@@ -480,7 +481,7 @@ export async function getBalance(type: string, apiKey: string): Promise<string |
 
     if (type === 'openrouter') {
         const res = await axios.get('https://openrouter.ai/api/v1/credits', {
-            headers: { Authorization: `Bearer ${apiKey}` },
+            headers: { Authorization: `Bearer ${safeKey}` },
             timeout: 5000
         });
         const data = res.data?.data;
@@ -493,7 +494,7 @@ export async function getBalance(type: string, apiKey: string): Promise<string |
     }
     
     // For others, check validity
-    const test = await testApiKey(type, apiKey);
+    const test = await testApiKey(type, safeKey);
     return test.valid ? '✓' : '✗';
   } catch {
     return '✗';
@@ -563,7 +564,8 @@ export async function testApiKey(type: string, apiKey: string): Promise<{ valid:
 }
 
 export async function fetchModels(type: string, apiKey: string): Promise<string[]> {
-  if (!apiKey) return [];
+  const safeKey = apiKey ? apiKey.trim() : '';
+  if (!safeKey) return [];
   try {
     if (type === 'anthropic') {
       return [
@@ -578,7 +580,7 @@ export async function fetchModels(type: string, apiKey: string): Promise<string[
       ];
     }
     if (type === 'gemini') {
-      const res = await axios.get(`${API_URLS.gemini}/models?key=${apiKey}`, { timeout: 10000 });
+      const res = await axios.get(`${API_URLS.gemini}/models?key=${safeKey}`, { timeout: 10000 });
       const models = res.data?.models || [];
       return models
         .map((m: any) => m.name.replace(/^models\//, ''))
@@ -628,7 +630,7 @@ export async function fetchModels(type: string, apiKey: string): Promise<string[
 
     const baseUrl = API_URLS[type] || API_URLS.openai;
     const res = await axios.get(`${baseUrl}/models`, {
-      headers: { Authorization: `Bearer ${apiKey}` },
+      headers: { Authorization: `Bearer ${safeKey}` },
       timeout: 10000
     });
     const data = res.data?.data || [];

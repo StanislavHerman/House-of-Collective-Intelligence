@@ -462,11 +462,20 @@ export async function password(prompt: string): Promise<string> {
         return new Promise<string>(resolve => {
             const onData = (data: Buffer) => {
                 const str = data.toString();
-                if (str === '\r' || str === '\n') {
+                
+                // Handle Enter (or pasted text with newline)
+                if (/[\r\n]/.test(str)) {
+                    // Take everything before the first newline
+                    const parts = str.split(/[\r\n]+/);
+                    input += parts[0];
+                    
                     stdin.removeListener('data', onData);
                     stdout.write('\n');
                     resolve(input);
-                } else if (str === '\x7f' || str === '\b') {
+                    return;
+                }
+                
+                if (str === '\x7f' || str === '\b') {
                     if (input.length > 0) {
                         input = input.slice(0, -1);
                         stdout.write('\b \b');

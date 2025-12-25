@@ -194,7 +194,7 @@ export class ConfigManager {
   }
 
   getApiKey(type: string): string | undefined {
-    return this.config.apiKeys[type];
+    return this.config.apiKeys[type]?.trim();
   }
 
   setApiKey(type: string, key: string) {
