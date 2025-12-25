@@ -300,7 +300,7 @@ export class Council {
               if (onProgress) onProgress({ type: 'agent_thinking', payload: { agent, estimatedTokens } });
               
               const startT = Date.now();
-              const response = await sendToProvider(agent, apiKey || '', question, historyWithoutCurrent, identityPrompt, signal);
+              const response = await sendToProvider(agent, apiKey || '', question, historyWithoutCurrent, identityPrompt, {}, signal);
               const duration = ((Date.now() - startT) / 1000).toFixed(1);
               
               if (onProgress) onProgress({ type: 'agent_response', payload: { agent, duration } });
@@ -360,7 +360,7 @@ export class Council {
             historyForRequest = historyForRequest.slice(0, -1);
         }
 
-        finalChairResponse = await sendToProvider(chairAgent, chairApiKey || '', currentPrompt, historyForRequest, CHAIR_SYSTEM_PROMPT, signal);
+        finalChairResponse = await sendToProvider(chairAgent, chairApiKey || '', currentPrompt, historyForRequest, CHAIR_SYSTEM_PROMPT, {}, signal);
 
         // Парсим инструменты
         const toolsToRun = this.parseTools(finalChairResponse.text);
@@ -655,7 +655,7 @@ export class Council {
 
       let rawJson = '';
       try {
-          const res = await sendToProvider(secretary, apiKey || '', prompt, [], t('sys_secretary'));
+          const res = await sendToProvider(secretary, apiKey || '', prompt, [], t('sys_secretary'), { temperature: 0 });
           
           rawJson = res.text.trim();
           if (!rawJson) {

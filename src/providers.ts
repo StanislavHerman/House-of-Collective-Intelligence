@@ -163,6 +163,7 @@ export async function sendToProvider(
   prompt: string,
   history: Message[],
   systemPrompt: string = DEFAULT_SYSTEM_PROMPT,
+  options: { temperature?: number } = {},
   signal?: AbortSignal
 ): Promise<ProviderResponse> {
   const model = agent.model;
@@ -186,12 +187,12 @@ export async function sendToProvider(
     attempts++;
     try {
       if (type === 'anthropic') {
-        return await sendAnthropic(safeApiKey, messages, model, systemPrompt, agent.id, signal);
+        return await sendAnthropic(safeApiKey, messages, model, systemPrompt, agent.id, options, signal);
       } else if (type === 'gemini') {
-        return await sendGemini(safeApiKey, messages, model, systemPrompt, agent.id, signal);
+        return await sendGemini(safeApiKey, messages, model, systemPrompt, agent.id, options, signal);
       } else {
         // openai, deepseek, grok, perplexity, openrouter
-        return await sendOpenAICompatible(type, safeApiKey, messages, model, systemPrompt, agent.id, signal);
+        return await sendOpenAICompatible(type, safeApiKey, messages, model, systemPrompt, agent.id, options, signal);
       }
     } catch (error: any) {
       if (axios.isCancel(error) || signal?.aborted) {
@@ -254,6 +255,7 @@ async function sendOpenAICompatible(
   model: string,
   systemPrompt: string,
   agentId: string,
+  options: { temperature?: number } = {},
   signal?: AbortSignal
 ): Promise<ProviderResponse> {
   const baseUrl = API_URLS[type] || API_URLS.openai;
@@ -327,6 +329,7 @@ async function sendOpenAICompatible(
           const payload: any = {
               model,
               messages: formattedMessages,
+              temperature: options.temperature ?? 0.7,
           };
 
           // Handle max_tokens vs max_completion_tokens
@@ -374,6 +377,7 @@ async function sendAnthropic(
   model: string,
   systemPrompt: string,
   agentId: string,
+  options: { temperature?: number } = {},
   signal?: AbortSignal
 ): Promise<ProviderResponse> {
   // Anthropic format:
@@ -412,7 +416,8 @@ async function sendAnthropic(
       model,
       max_tokens: 8192,
       system: systemWithCache,
-      messages: chatMessages
+      messages: chatMessages,
+      temperature: options.temperature ?? 0.7,
     },
     {
       headers: {
@@ -435,6 +440,7 @@ async function sendGemini(
   model: string,
   systemPrompt: string,
   agentId: string,
+  options: { temperature?: number } = {},
   signal?: AbortSignal
 ): Promise<ProviderResponse> {
   // Gemini format: parts: [{ text: "..." }, { inlineData: { mimeType: "...", data: "..." } }]
@@ -452,7 +458,10 @@ async function sendGemini(
 
   const requestBody: any = {
       contents: geminiContent,
-      systemInstruction: { parts: [{ text: systemPrompt }] }
+      systemInstruction: { parts: [{ text: systemPrompt }] },
+      generationConfig: {
+          temperature: options.temperature ?? 0.7,
+      }
   };
 
   const res = await axios.post(
