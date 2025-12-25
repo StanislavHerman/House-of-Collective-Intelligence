@@ -669,12 +669,25 @@ export class Council {
           // Fallback: simple parse if extraction returned nothing (maybe it's a flat number or array?)
           // But we expect Object.
           if (!evalJson) {
-             // Try strict parse of the whole string as last resort
-             try {
-                 evalJson = JSON.parse(rawJson);
-             } catch (e: any) {
-                 console.warn(`[Secretary] Full invalid JSON: ${rawJson}`); 
-                 throw new Error(`JSON Parse: ${e.message}`);
+             // Try to repair truncated JSON
+             const repaired = this.repairJson(rawJson);
+             if (repaired) {
+                 try {
+                     evalJson = JSON.parse(repaired);
+                     console.log('[Secretary] Repaired truncated JSON successfully.');
+                 } catch (e) {
+                     // ignore, fall through to strict parse error
+                 }
+             }
+             
+             if (!evalJson) {
+                // Try strict parse of the whole string as last resort
+                try {
+                    evalJson = JSON.parse(rawJson);
+                } catch (e: any) {
+                    console.warn(`[Secretary] Full invalid JSON: ${rawJson}`); 
+                    throw new Error(`JSON Parse: ${e.message}`);
+                }
              }
           }
 
@@ -742,6 +755,50 @@ export class Council {
           }
       }
       return null;
+  }
+
+  private repairJson(text: string): string | null {
+      const start = text.indexOf('{');
+      if (start === -1) return null;
+      
+      let working = text.substring(start);
+      const stack: string[] = [];
+      let inString = false;
+      let escape = false;
+      
+      for (let i = 0; i < working.length; i++) {
+          const char = working[i];
+          
+          if (escape) {
+              escape = false;
+              continue;
+          }
+          
+          if (char === '\\') {
+              escape = true;
+              continue;
+          }
+          
+          if (char === '"') {
+              inString = !inString;
+          } else if (!inString) {
+              if (char === '{') stack.push('}');
+              else if (char === '[') stack.push(']');
+              else if (char === '}') {
+                  if (stack.length && stack[stack.length - 1] === '}') stack.pop();
+              } else if (char === ']') {
+                  if (stack.length && stack[stack.length - 1] === ']') stack.pop();
+              }
+          }
+      }
+      
+      // Close open structures
+      if (inString) working += '"';
+      while (stack.length > 0) {
+          working += stack.pop();
+      }
+      
+      return working;
   }
 
   public parseTools(text: string): { type: 'command' | 'file' | 'edit' | 'read' | 'tree' | 'search' | 'browser_open' | 'browser_search' | 'browser_act' | 'desktop_screenshot' | 'desktop_act' | 'system_diagnostics' | 'ios_config', content: string, arg: string }[] {
