@@ -653,35 +653,29 @@ export class Council {
       prompt += `IMPORTANT: Also evaluate the Chairman (ID: ${chairId})! If the final decision answers the user's question well, mark Chairman as "accepted". If it refuses or fails, "rejected".\n`;
       prompt += `You can also evaluate yourself (ID: ${secretaryId}) as "accepted" if this analysis process is working smoothly.`;
 
+      let rawJson = '';
       try {
           const res = await sendToProvider(secretary, apiKey || '', prompt, [], t('sys_secretary'));
           
-          let rawJson = res.text.trim();
+          rawJson = res.text.trim();
           if (!rawJson) {
              console.warn(`[Secretary] Empty response from ${secretary.model}`);
              return;
           }
 
-          // Robust JSON extraction
-          const firstBrace = rawJson.indexOf('{');
-          const lastBrace = rawJson.lastIndexOf('}');
+          // Try robust extraction
+          let evalJson = this.extractJson(rawJson);
           
-          if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-              rawJson = rawJson.substring(firstBrace, lastBrace + 1);
-          } else {
-              // If no braces found, it's definitely not valid JSON
-              console.warn(`[Secretary] Invalid format (no JSON block found): ${rawJson.substring(0, 50)}...`);
-              return;
-          }
-
-          let evalJson: any;
-          try {
-              evalJson = JSON.parse(rawJson);
-          } catch (e: any) {
-              // Try to fix common errors (like trailing commas) if simple parse fails?
-              // For now just log safely
-              console.warn(`[Secretary] JSON Parse Error: ${e.message}. Raw: ${rawJson.substring(0, 100)}...`);
-              return;
+          // Fallback: simple parse if extraction returned nothing (maybe it's a flat number or array?)
+          // But we expect Object.
+          if (!evalJson) {
+             // Try strict parse of the whole string as last resort
+             try {
+                 evalJson = JSON.parse(rawJson);
+             } catch (e: any) {
+                 console.warn(`[Secretary] Full invalid JSON: ${rawJson}`); 
+                 throw new Error(`JSON Parse: ${e.message}`);
+             }
           }
 
           let updateCount = 0;
@@ -696,8 +690,58 @@ export class Council {
           // Silently updated stats (User requested no output in chat)
           
       } catch (e: any) {
-          if (onProgress) onProgress({ type: 'error', message: `⚠️ Secretary error: ${e.message}` });
+          const snippet = rawJson.length > 50 ? rawJson.substring(0, 50) + '...' : rawJson;
+          if (onProgress) onProgress({ type: 'error', message: `⚠️ Secretary error: ${e.message} (Content: "${snippet}")` });
       }
+  }
+
+  private extractJson(text: string): any {
+      let startIndex = text.indexOf('{');
+      if (startIndex === -1) return null;
+
+      let braceCount = 0;
+      let inString = false;
+      let escape = false;
+      
+      for (let i = startIndex; i < text.length; i++) {
+          const char = text[i];
+          
+          if (escape) {
+              escape = false;
+              continue;
+          }
+          
+          if (char === '\\') {
+              escape = true;
+              continue;
+          }
+          
+          if (char === '"') {
+              inString = !inString;
+              continue;
+          }
+          
+          if (!inString) {
+              if (char === '{') {
+                  braceCount++;
+              } else if (char === '}') {
+                  braceCount--;
+                  if (braceCount === 0) {
+                      // Found complete object
+                      const potentialJson = text.substring(startIndex, i + 1);
+                      try {
+                          return JSON.parse(potentialJson);
+                      } catch (e) {
+                          // If parse fails (e.g. bad control chars), we could keep looking, 
+                          // but usually balanced braces mean we found the block.
+                          // Return null to let fallback handle or fail.
+                          return null;
+                      }
+                  }
+              }
+          }
+      }
+      return null;
   }
 
   public parseTools(text: string): { type: 'command' | 'file' | 'edit' | 'read' | 'tree' | 'search' | 'browser_open' | 'browser_search' | 'browser_act' | 'desktop_screenshot' | 'desktop_act' | 'system_diagnostics' | 'ios_config', content: string, arg: string }[] {
