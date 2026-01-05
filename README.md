@@ -7,7 +7,8 @@
 
 ---
 
-**House of Collective Intelligence** is a powerful CLI tool that allows you to consult with a "Council" of multiple AI models simultaneously. You appoint a **Chairman** (who answers you directly) and form a **Council** (who advises the Chairman).
+**House of Collective Intelligence** — CLI “совет” из нескольких моделей. Ты назначаешь **Председателя** (он отвечает тебе) и собираешь **Совет** (они помогают Председателю).
+Опционально можно включить **Секретаря**, чтобы он считал эффективность и сжимал контекст.
 
 #### 🚀 Quick Start (one command)
 
@@ -39,14 +40,16 @@ hause
 - **Session Persistence**: Resume your previous conversation exactly where you left off.
 - **Smart Memory**: Auto-compacting context to save tokens while keeping the conversation going.
 - **Privacy**: All keys and history are stored locally on your machine (`~/.council-ai/`).
-- **Auto-Update**: Keep your app up-to-date with a single command.
+- **Updates**: `/update` works when installed via Git; otherwise re-run Quick Start.
 
 #### 🤖 Agentic Capabilities
-The Council is not just for chat. Agents can perform real actions on your computer (if you allow them):
-- 🖥️ **Desktop Control**: Take screenshots and simulate keyboard input (works on **macOS** & **Windows**).
-- 🌐 **Web Browsing**: Search the web, open pages, and interact with websites.
-- 📁 **File System**: Read and write files in your current directory.
-- 💻 **Terminal**: Execute shell commands (Bash on macOS/Linux, PowerShell on Windows).
+The Council is not just for chat. Agents can perform actions on your computer (only if you allow them in `/settings`):
+- 💻 **Terminal**: run shell commands.
+- 📁 **Files**: read / write / edit files, show tree, smart search.
+- 🌐 **Browser**: open/search/act via Puppeteer (may download Chromium).
+- 🖥️ **Desktop**: screenshot + basic keyboard input (macOS/Windows; OS/UI dependent).
+- 🧪 **Diagnostics**: system self-check.
+- 🍎 **iOS config**: safe read/edit `.pbxproj` via `ios:config`.
 
 *You can enable/disable these permissions anytime using the `/settings` command.*
 
@@ -103,14 +106,16 @@ hause
 - **Сохранение сессии**: Возобновите разговор с того места, где остановились, при следующем запуске.
 - **Умная память**: Автоматическое сжатие контекста для экономии токенов при сохранении сути диалога.
 - **Приватность**: Все ключи и история хранятся локально на вашем компьютере (`~/.council-ai/`).
-- **Авто-обновление**: Обновление приложения одной командой.
+- **Обновления**: `/update` работает при установке через Git; иначе просто заново запустите “Быстрый старт”.
 
 #### 🤖 Агентские возможности
-Совет — это не просто чат. Агенты могут выполнять реальные действия на вашем компьютере (если вы разрешите):
-- 🖥️ **Управление ПК**: Скриншоты экрана и имитация клавиатуры (работает на **macOS** и **Windows**).
-- 🌐 **Веб-браузинг**: Поиск в интернете, чтение сайтов и взаимодействие с ними.
-- 📁 **Файловая система**: Чтение и создание файлов в текущей папке.
-- 💻 **Терминал**: Выполнение системных команд (Bash на macOS/Linux, PowerShell на Windows).
+Совет — это не просто чат. Агенты могут выполнять действия на компьютере (только если вы разрешили в `/settings`):
+- 💻 **Терминал**: выполнение команд оболочки.
+- 📁 **Файлы**: чтение/запись/редактирование, дерево проекта, умный поиск.
+- 🌐 **Браузер**: open/search/act через Puppeteer (может скачивать Chromium).
+- 🖥️ **Экран**: скриншоты + базовый ввод с клавиатуры (macOS/Windows; зависит от ОС/интерфейса).
+- 🧪 **Диагностика**: самопроверка системы.
+- 🍎 **iOS config**: безопасное чтение/изменение `.pbxproj` через `ios:config`.
 
 *Вы можете управлять этими разрешениями в любой момент через команду `/settings`.*
 

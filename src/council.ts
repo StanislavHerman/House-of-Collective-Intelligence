@@ -277,7 +277,7 @@ export class Council {
     chairSystemPromptText += memoryInstruction;
     // -------------------------------------
 
-    const CHAIR_SYSTEM_PROMPT = chairSystemPromptText + `\n\n${TOOLS_DEF}\n\nФОРМАТ ВЫЗОВА ИНСТРУМЕНТОВ (строго соблюдай MARKDOWN блоки):\n   \n   1. Выполнить команду (bash):\n   \`\`\`bash\n   команда\n   \`\`\`\n   \n   2. Создать/записать файл:\n   \`\`\`file:путь/к/файлу\n   содержимое файла\n   \`\`\`\n   \n   3. Прочитать файл:\n   \`\`\`read:путь/к/файлу\`\`\`\n\n   4. Браузер (Интернет + Зрение):\n   \`\`\`browser:open url\`\`\`\n   \`\`\`browser:search query\`\`\`\n   \`\`\`browser:act action\`\`\`\n\n   5. Экран (macOS):\n   \`\`\`desktop:screenshot path.png\`\`\`\n   \`\`\`desktop:act action\`\`\`\n`;
+    const CHAIR_SYSTEM_PROMPT = chairSystemPromptText + `\n\n${TOOLS_DEF}\n\nФОРМАТ ВЫЗОВА ИНСТРУМЕНТОВ (строго соблюдай MARKDOWN блоки):\n   \n   1. Выполнить команду (bash):\n   \`\`\`bash\n   команда\n   \`\`\`\n   \n   2. Создать/записать файл:\n   \`\`\`file:путь/к/файлу\n   содержимое файла\n   \`\`\`\n   \n   3. Прочитать файл:\n   \`\`\`read:путь/к/файлу\`\`\`\n\n   4. Браузер (Интернет + Зрение):\n   \`\`\`browser:open url\`\`\`\n   \`\`\`browser:search query\`\`\`\n   \`\`\`browser:act action\`\`\`\n\n   5. Экран (macOS/Windows):\n   \`\`\`desktop:screenshot path.png\`\`\`\n   \`\`\`desktop:act action\`\`\`\n`;
 
     // 1. Опрашиваем Совет
     if (onProgress && councilMembers.length > 0) {
