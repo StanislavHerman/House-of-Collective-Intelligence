@@ -74,13 +74,28 @@ ensure_path() {
 }
 
 if [[ ":$PATH:" != *":${BIN_DIR}:"* ]]; then
-    if [[ -n "${ZSH_VERSION-}" ]]; then
-        ensure_path "${HOME}/.zshrc"
-    elif [[ -n "${BASH_VERSION-}" ]]; then
-        ensure_path "${HOME}/.bashrc"
-    else
-        ensure_path "${HOME}/.profile"
-    fi
+    detect_rc_file() {
+        local user_shell="${SHELL-}"
+        if [[ "$user_shell" == *zsh ]]; then
+            echo "${HOME}/.zshrc"
+            return
+        fi
+        if [[ "$user_shell" == *bash ]]; then
+            echo "${HOME}/.bashrc"
+            return
+        fi
+        if [[ -f "${HOME}/.zshrc" ]]; then
+            echo "${HOME}/.zshrc"
+            return
+        fi
+        if [[ -f "${HOME}/.bashrc" ]]; then
+            echo "${HOME}/.bashrc"
+            return
+        fi
+        echo "${HOME}/.profile"
+    }
+
+    ensure_path "$(detect_rc_file)"
     echo ""
     echo -e "${YELLOW}Added ${BIN_DIR} to your PATH for new terminals.${NC}"
 fi
