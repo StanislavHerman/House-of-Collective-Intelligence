@@ -11,18 +11,16 @@
 
 **House of Collective Intelligence** is a powerful CLI tool that allows you to consult with a "Council" of multiple AI models simultaneously. You appoint a **Chairman** (who answers you directly) and form a **Council** (who advises the Chairman).
 
-#### 🚀 Quick Start (2 commands)
+#### 🚀 Quick Start (one command)
 
 **macOS / Linux:**
 ```bash
-curl -fsSL https://raw.githubusercontent.com/StanislavHerman/House-of-Collective-Intelligence/main/get.sh | bash
-hause
+curl -fsSL https://raw.githubusercontent.com/StanislavHerman/House-of-Collective-Intelligence/main/get.sh | bash && ~/.local/bin/hause
 ```
 
 **Windows (PowerShell):**
 ```powershell
-irm https://raw.githubusercontent.com/StanislavHerman/House-of-Collective-Intelligence/main/get.ps1 | iex
-hause
+irm https://raw.githubusercontent.com/StanislavHerman/House-of-Collective-Intelligence/main/get.ps1 | iex; & "$env:USERPROFILE\\.local\\bin\\hause.cmd"
 ```
 
 #### ✨ Key Features
@@ -44,7 +42,7 @@ The Council is not just for chat. Agents can perform real actions on your comput
 
 *You can enable/disable these permissions anytime using the `/settings` command.*
 
-#### 🚀 Installation
+#### 🚀 Installation (manual)
 
 **Prerequisites:**
 - **Node.js**: v18 or higher (v20 recommended).
@@ -109,18 +107,16 @@ If you downloaded the code as a ZIP archive:
 
 **House of Collective Intelligence** — это мощный инструмент для терминала, который позволяет советоваться с "Советом" из нескольких ИИ одновременно. Вы назначаете **Председателя** (он отвечает вам) и собираете **Совет** (они дают советы Председателю).
 
-#### 🚀 Быстрый старт (2 команды)
+#### 🚀 Быстрый старт (одна команда)
 
 **macOS / Linux:**
 ```bash
-curl -fsSL https://raw.githubusercontent.com/StanislavHerman/House-of-Collective-Intelligence/main/get.sh | bash
-hause
+curl -fsSL https://raw.githubusercontent.com/StanislavHerman/House-of-Collective-Intelligence/main/get.sh | bash && ~/.local/bin/hause
 ```
 
 **Windows (PowerShell):**
 ```powershell
-irm https://raw.githubusercontent.com/StanislavHerman/House-of-Collective-Intelligence/main/get.ps1 | iex
-hause
+irm https://raw.githubusercontent.com/StanislavHerman/House-of-Collective-Intelligence/main/get.ps1 | iex; & "$env:USERPROFILE\\.local\\bin\\hause.cmd"
 ```
 
 #### ✨ Возможности
@@ -142,7 +138,7 @@ hause
 
 *Вы можете управлять этими разрешениями в любой момент через команду `/settings`.*
 
-#### 🚀 Установка
+#### 🚀 Установка (вручную)
 
 **Требования:**
 - **Node.js**: v18 или выше (рекомендуется v20).
