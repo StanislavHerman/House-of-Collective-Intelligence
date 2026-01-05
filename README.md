@@ -11,6 +11,20 @@
 
 **House of Collective Intelligence** is a powerful CLI tool that allows you to consult with a "Council" of multiple AI models simultaneously. You appoint a **Chairman** (who answers you directly) and form a **Council** (who advises the Chairman).
 
+#### 🚀 Quick Start (2 commands)
+
+**macOS / Linux:**
+```bash
+curl -fsSL https://raw.githubusercontent.com/StanislavHerman/House-of-Collective-Intelligence/main/get.sh | bash
+hause
+```
+
+**Windows (PowerShell):**
+```powershell
+irm https://raw.githubusercontent.com/StanislavHerman/House-of-Collective-Intelligence/main/get.ps1 | iex
+hause
+```
+
 #### ✨ Key Features
 - **Multi-Model Support**: Use OpenAI, Anthropic, DeepSeek, xAI (Grok), Google Gemini, Perplexity, and OpenRouter.
 - **Cross-Platform**: Works natively on **macOS** and **Windows** (no WSL required).
@@ -32,19 +46,6 @@ The Council is not just for chat. Agents can perform real actions on your comput
 
 #### 🚀 Installation
 
-**Quick Install (Recommended):**
-Use this on a new machine to automatically clone, setup, and install dependencies.
-
-**macOS / Linux:**
-```bash
-curl -fsSL https://raw.githubusercontent.com/StanislavHerman/House-of-Collective-Intelligence/main/get.sh | bash
-```
-
-**Windows (PowerShell):**
-```powershell
-irm https://raw.githubusercontent.com/StanislavHerman/House-of-Collective-Intelligence/main/get.ps1 | iex
-```
-
 **Prerequisites:**
 - **Node.js**: v18 or higher (v20 recommended).
 - **Git**: To clone the repository.
@@ -62,9 +63,7 @@ irm https://raw.githubusercontent.com/StanislavHerman/House-of-Collective-Intell
    ```
 3. Start:
    ```bash
-   hause
-   # Or from the project folder:
-   ./hause
+   hause # or ./hause from the project folder
    ```
 
 **Windows (PowerShell):**
@@ -80,11 +79,10 @@ irm https://raw.githubusercontent.com/StanislavHerman/House-of-Collective-Intell
    # Or manually: npm install; npm run build
    ```
 3. Start:
-   ```cmd
+    ```cmd
    hause
-   rem Or from the project folder:
-   .\hause.cmd
-   ```
+   rem or .\hause.cmd from the project folder
+    ```
 
 #### 🔄 Updating
 The `/update` command works **only if you cloned the repository using Git**.
@@ -111,6 +109,20 @@ If you downloaded the code as a ZIP archive:
 
 **House of Collective Intelligence** — это мощный инструмент для терминала, который позволяет советоваться с "Советом" из нескольких ИИ одновременно. Вы назначаете **Председателя** (он отвечает вам) и собираете **Совет** (они дают советы Председателю).
 
+#### 🚀 Быстрый старт (2 команды)
+
+**macOS / Linux:**
+```bash
+curl -fsSL https://raw.githubusercontent.com/StanislavHerman/House-of-Collective-Intelligence/main/get.sh | bash
+hause
+```
+
+**Windows (PowerShell):**
+```powershell
+irm https://raw.githubusercontent.com/StanislavHerman/House-of-Collective-Intelligence/main/get.ps1 | iex
+hause
+```
+
 #### ✨ Возможности
 - **Мульти-модели**: Используйте OpenAI, Anthropic, DeepSeek, xAI (Grok), Google Gemini, Perplexity и OpenRouter.
 - **Кроссплатформенность**: Работает нативно на **macOS** и **Windows** (WSL не требуется).
@@ -132,19 +144,6 @@ If you downloaded the code as a ZIP archive:
 
 #### 🚀 Установка
 
-**Быстрая установка (Рекомендуется):**
-Используйте эту команду на новом компьютере для автоматического клонирования, настройки и установки зависимостей.
-
-**macOS / Linux:**
-```bash
-curl -fsSL https://raw.githubusercontent.com/StanislavHerman/House-of-Collective-Intelligence/main/get.sh | bash
-```
-
-**Windows (PowerShell):**
-```powershell
-irm https://raw.githubusercontent.com/StanislavHerman/House-of-Collective-Intelligence/main/get.ps1 | iex
-```
-
 **Требования:**
 - **Node.js**: v18 или выше (рекомендуется v20).
 - **Git**: Для клонирования репозитория.
@@ -162,9 +161,7 @@ irm https://raw.githubusercontent.com/StanislavHerman/House-of-Collective-Intell
    ```
 3. Запуск:
    ```bash
-   hause
-   # Или из папки проекта:
-   ./hause
+   hause # или ./hause из папки проекта
    ```
 
 **Windows (PowerShell):**
@@ -182,8 +179,7 @@ irm https://raw.githubusercontent.com/StanislavHerman/House-of-Collective-Intell
 3. Запуск:
    ```cmd
    hause
-   rem Или из папки проекта:
-   .\hause.cmd
+   rem или .\hause.cmd из папки проекта
    ```
 
 #### 🔄 Обновление

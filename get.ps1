@@ -27,9 +27,12 @@ Write-Host "✓ Git:  $(git --version)" -ForegroundColor Green
 Write-Host ""
 
 if (Test-Path (Join-Path $InstallDir ".git")) {
-  if (-not $Update) {
-    Write-Host "Directory already exists: $InstallDir" -ForegroundColor Yellow
-    Write-Host "Re-run with -Update to update it instead." -ForegroundColor Yellow
+  if (-not $Update) { $Update = $true }
+
+  $status = (git -C $InstallDir status --porcelain)
+  if (-not [string]::IsNullOrWhiteSpace($status)) {
+    Write-Host "Repo has local changes: $InstallDir" -ForegroundColor Yellow
+    Write-Host "Commit/stash them first, or reinstall into a different folder (-InstallDir)." -ForegroundColor Yellow
     exit 2
   }
 
@@ -56,4 +59,3 @@ powershell -ExecutionPolicy Bypass -File .\install.ps1
 Write-Host ""
 Write-Host "Done." -ForegroundColor Green
 Write-Host "Start a new terminal, then run: hause" -ForegroundColor Cyan
-

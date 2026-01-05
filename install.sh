@@ -32,9 +32,12 @@ fi
 echo ""
 echo -e "${CYAN}Installing dependencies...${NC}"
 if [[ -f package-lock.json ]]; then
-    npm ci
+    if ! npm ci --no-audit --no-fund; then
+        echo -e "${YELLOW}npm ci failed, falling back to npm install...${NC}"
+        npm install --no-audit --no-fund
+    fi
 else
-    npm install
+    npm install --no-audit --no-fund
 fi
 
 # 3. Build Project

@@ -69,15 +69,21 @@ echo ""
 
 if [[ -d "$INSTALL_DIR/.git" ]]; then
   if [[ "$UPDATE" -ne 1 ]]; then
-    echo "Directory already exists: $INSTALL_DIR"
-    echo "Re-run with --update to update it instead."
-    exit 2
+    UPDATE=1
   fi
 
-  echo "Updating existing install at: $INSTALL_DIR"
-  git -C "$INSTALL_DIR" fetch origin --prune
-  git -C "$INSTALL_DIR" checkout -B main origin/main
-  git -C "$INSTALL_DIR" pull --ff-only origin main
+  if [[ "$UPDATE" -eq 1 ]]; then
+    if [[ -n "$(git -C "$INSTALL_DIR" status --porcelain 2>/dev/null || true)" ]]; then
+      echo "Repo has local changes: $INSTALL_DIR" >&2
+      echo "Commit/stash them first, or reinstall into a different directory (--dir)." >&2
+      exit 2
+    fi
+
+    echo "Updating existing install at: $INSTALL_DIR"
+    git -C "$INSTALL_DIR" fetch origin --prune
+    git -C "$INSTALL_DIR" checkout -B main origin/main
+    git -C "$INSTALL_DIR" pull --ff-only origin main
+  fi
 else
   if [[ -e "$INSTALL_DIR" ]]; then
     echo "Path exists but is not a git repo: $INSTALL_DIR" >&2
@@ -98,4 +104,3 @@ echo ""
 echo "Done."
 echo "Start a new terminal (or run: source ~/.zshrc / ~/.bashrc), then run:"
 echo "  hause"
-

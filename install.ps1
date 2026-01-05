@@ -14,9 +14,13 @@ try {
 # 2. Install Dependencies
 Write-Host "`n📦 Installing dependencies..." -ForegroundColor Yellow
 if (Test-Path "package-lock.json") {
-    npm ci
+    npm ci --no-audit --no-fund
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "⚠️  npm ci failed, falling back to npm install..." -ForegroundColor Yellow
+        npm install --no-audit --no-fund
+    }
 } else {
-    npm install
+    npm install --no-audit --no-fund
 }
 if ($LASTEXITCODE -ne 0) {
     Write-Host "❌ npm install failed" -ForegroundColor Red
