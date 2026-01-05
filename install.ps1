@@ -13,7 +13,15 @@ try {
 
 # 2. Install Dependencies
 Write-Host "`n📦 Installing dependencies..." -ForegroundColor Yellow
-npm install
+if (Test-Path "package-lock.json") {
+    npm ci --no-audit --no-fund
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "⚠️  npm ci failed, falling back to npm install..." -ForegroundColor Yellow
+        npm install --no-audit --no-fund
+    }
+} else {
+    npm install --no-audit --no-fund
+}
 if ($LASTEXITCODE -ne 0) {
     Write-Host "❌ npm install failed" -ForegroundColor Red
     exit 1
@@ -27,25 +35,33 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
-# 4. Create Launch Scripts
-Write-Host "`n🚀 Setting up 'hause' command..." -ForegroundColor Yellow
+# 4. Register `hause` command in user PATH (no admin)
+Write-Host "`n🚀 Registering 'hause' command..." -ForegroundColor Yellow
 
-$currentDir = Get-Location
-$batchPath = Join-Path $currentDir "hause.cmd"
-$psPath = Join-Path $currentDir "hause.ps1"
-$jsPath = Join-Path $currentDir "dist\index.js"
+$rootDir = (Get-Location).Path
+$jsPath = Join-Path $rootDir "dist\index.js"
+$binDir = Join-Path $env:USERPROFILE ".local\bin"
+New-Item -ItemType Directory -Force -Path $binDir | Out-Null
 
-# Create .cmd script for Command Prompt
+$hauseCmd = Join-Path $binDir "hause.cmd"
+$councilCmd = Join-Path $binDir "council.cmd"
 $cmdContent = "@echo off`r`nnode `"$jsPath`" %*"
-Set-Content -Path $batchPath -Value $cmdContent
-Write-Host "  Created $batchPath" -ForegroundColor Gray
+Set-Content -Path $hauseCmd -Value $cmdContent -Encoding ASCII
+Set-Content -Path $councilCmd -Value $cmdContent -Encoding ASCII
+Write-Host "  Created $hauseCmd" -ForegroundColor Gray
 
-# Create .ps1 script for PowerShell
-$psContent = "node `"$jsPath`" `$args"
-Set-Content -Path $psPath -Value $psContent
-Write-Host "  Created $psPath" -ForegroundColor Gray
+$userPath = [Environment]::GetEnvironmentVariable("Path", "User")
+if ([string]::IsNullOrWhiteSpace($userPath)) { $userPath = "" }
+$parts = $userPath.Split(';') | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
+if (-not ($parts -contains $binDir)) {
+    $newUserPath = if ($userPath.Length -gt 0) { "$binDir;$userPath" } else { "$binDir" }
+    [Environment]::SetEnvironmentVariable("Path", $newUserPath, "User")
+    $env:Path = "$binDir;$env:Path"
+    Write-Host "  Added $binDir to user PATH (new terminals)." -ForegroundColor Gray
+} else {
+    Write-Host "  $binDir already in user PATH." -ForegroundColor Gray
+}
 
 Write-Host "`n✅ Installation Complete!" -ForegroundColor Green
-Write-Host "To run the agent, use:" -ForegroundColor Cyan
-Write-Host "  .\hause.cmd" -ForegroundColor White
-Write-Host "  or add this folder to your PATH." -ForegroundColor Gray
+Write-Host "Start a new terminal, then run:" -ForegroundColor Cyan
+Write-Host "  hause" -ForegroundColor White

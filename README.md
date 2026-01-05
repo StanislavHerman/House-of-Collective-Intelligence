@@ -11,6 +11,20 @@
 
 **House of Collective Intelligence** is a powerful CLI tool that allows you to consult with a "Council" of multiple AI models simultaneously. You appoint a **Chairman** (who answers you directly) and form a **Council** (who advises the Chairman).
 
+#### 🚀 Quick Start (2 commands)
+
+**macOS / Linux:**
+```bash
+curl -fsSL https://raw.githubusercontent.com/StanislavHerman/House-of-Collective-Intelligence/main/get.sh | bash
+hause
+```
+
+**Windows (PowerShell):**
+```powershell
+irm https://raw.githubusercontent.com/StanislavHerman/House-of-Collective-Intelligence/main/get.ps1 | iex
+hause
+```
+
 #### ✨ Key Features
 - **Multi-Model Support**: Use OpenAI, Anthropic, DeepSeek, xAI (Grok), Google Gemini, Perplexity, and OpenRouter.
 - **Cross-Platform**: Works natively on **macOS** and **Windows** (no WSL required).
@@ -49,7 +63,7 @@ The Council is not just for chat. Agents can perform real actions on your comput
    ```
 3. Start:
    ```bash
-   ./hause
+   hause # or ./hause from the project folder
    ```
 
 **Windows (PowerShell):**
@@ -65,9 +79,10 @@ The Council is not just for chat. Agents can perform real actions on your comput
    # Or manually: npm install; npm run build
    ```
 3. Start:
-   ```cmd
-   .\hause.cmd
-   ```
+    ```cmd
+   hause
+   rem or .\hause.cmd from the project folder
+    ```
 
 #### 🔄 Updating
 The `/update` command works **only if you cloned the repository using Git**.
@@ -93,6 +108,20 @@ If you downloaded the code as a ZIP archive:
 ### 🇷🇺 Русский
 
 **House of Collective Intelligence** — это мощный инструмент для терминала, который позволяет советоваться с "Советом" из нескольких ИИ одновременно. Вы назначаете **Председателя** (он отвечает вам) и собираете **Совет** (они дают советы Председателю).
+
+#### 🚀 Быстрый старт (2 команды)
+
+**macOS / Linux:**
+```bash
+curl -fsSL https://raw.githubusercontent.com/StanislavHerman/House-of-Collective-Intelligence/main/get.sh | bash
+hause
+```
+
+**Windows (PowerShell):**
+```powershell
+irm https://raw.githubusercontent.com/StanislavHerman/House-of-Collective-Intelligence/main/get.ps1 | iex
+hause
+```
 
 #### ✨ Возможности
 - **Мульти-модели**: Используйте OpenAI, Anthropic, DeepSeek, xAI (Grok), Google Gemini, Perplexity и OpenRouter.
@@ -132,7 +161,7 @@ If you downloaded the code as a ZIP archive:
    ```
 3. Запуск:
    ```bash
-   ./hause
+   hause # или ./hause из папки проекта
    ```
 
 **Windows (PowerShell):**
@@ -149,7 +178,8 @@ If you downloaded the code as a ZIP archive:
    ```
 3. Запуск:
    ```cmd
-   .\hause.cmd
+   hause
+   rem или .\hause.cmd из папки проекта
    ```
 
 #### 🔄 Обновление
