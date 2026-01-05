@@ -7,7 +7,7 @@
 
 ---
 
-### 🇬🇧 English
+### English
 
 **House of Collective Intelligence** is a powerful CLI tool that allows you to consult with a "Council" of multiple AI models simultaneously. You appoint a **Chairman** (who answers you directly) and form a **Council** (who advises the Chairman).
 
@@ -75,7 +75,7 @@ The Council is not just for chat. Agents can perform real actions on your comput
 
 ---
 
-### 🇷🇺 Русский
+### Русский
 
 **House of Collective Intelligence** — это мощный инструмент для терминала, который позволяет советоваться с "Советом" из нескольких ИИ одновременно. Вы назначаете **Председателя** (он отвечает вам) и собираете **Совет** (они дают советы Председателю).
 
