@@ -32,6 +32,19 @@ The Council is not just for chat. Agents can perform real actions on your comput
 
 #### 🚀 Installation
 
+**Quick Install (Recommended):**
+Use this on a new machine to automatically clone, setup, and install dependencies.
+
+**macOS / Linux:**
+```bash
+curl -fsSL https://raw.githubusercontent.com/StanislavHerman/House-of-Collective-Intelligence/main/get.sh | bash
+```
+
+**Windows (PowerShell):**
+```powershell
+irm https://raw.githubusercontent.com/StanislavHerman/House-of-Collective-Intelligence/main/get.ps1 | iex
+```
+
 **Prerequisites:**
 - **Node.js**: v18 or higher (v20 recommended).
 - **Git**: To clone the repository.
@@ -49,6 +62,8 @@ The Council is not just for chat. Agents can perform real actions on your comput
    ```
 3. Start:
    ```bash
+   hause
+   # Or from the project folder:
    ./hause
    ```
 
@@ -66,6 +81,8 @@ The Council is not just for chat. Agents can perform real actions on your comput
    ```
 3. Start:
    ```cmd
+   hause
+   rem Or from the project folder:
    .\hause.cmd
    ```
 
@@ -115,6 +132,19 @@ If you downloaded the code as a ZIP archive:
 
 #### 🚀 Установка
 
+**Быстрая установка (Рекомендуется):**
+Используйте эту команду на новом компьютере для автоматического клонирования, настройки и установки зависимостей.
+
+**macOS / Linux:**
+```bash
+curl -fsSL https://raw.githubusercontent.com/StanislavHerman/House-of-Collective-Intelligence/main/get.sh | bash
+```
+
+**Windows (PowerShell):**
+```powershell
+irm https://raw.githubusercontent.com/StanislavHerman/House-of-Collective-Intelligence/main/get.ps1 | iex
+```
+
 **Требования:**
 - **Node.js**: v18 или выше (рекомендуется v20).
 - **Git**: Для клонирования репозитория.
@@ -132,6 +162,8 @@ If you downloaded the code as a ZIP archive:
    ```
 3. Запуск:
    ```bash
+   hause
+   # Или из папки проекта:
    ./hause
    ```
 
@@ -149,6 +181,8 @@ If you downloaded the code as a ZIP archive:
    ```
 3. Запуск:
    ```cmd
+   hause
+   rem Или из папки проекта:
    .\hause.cmd
    ```
 
