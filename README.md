@@ -20,7 +20,17 @@ curl -fsSL https://raw.githubusercontent.com/StanislavHerman/House-of-Collective
 
 **Windows (PowerShell):**
 ```powershell
-irm https://raw.githubusercontent.com/StanislavHerman/House-of-Collective-Intelligence/main/get.ps1 | iex; & "$env:USERPROFILE\\.local\\bin\\hause.cmd"
+irm https://raw.githubusercontent.com/StanislavHerman/House-of-Collective-Intelligence/main/get.ps1 | iex; & "$env:USERPROFILE\.local\bin\hause.cmd"
+```
+
+**What this does:**
+- Installs prerequisites automatically when possible (Git + Node.js v18+, recommended v20 LTS).
+- Downloads the project (Git clone, or ZIP fallback when Git isn't available).
+- Installs dependencies, builds, and registers `hause` in your PATH.
+
+**Next time, just run:**
+```bash
+hause
 ```
 
 #### ✨ Key Features
@@ -42,51 +52,13 @@ The Council is not just for chat. Agents can perform real actions on your comput
 
 *You can enable/disable these permissions anytime using the `/settings` command.*
 
-#### 🚀 Installation (manual)
+<details>
+  <summary><b>Manual / advanced install</b></summary>
 
-**Prerequisites:**
-- **Node.js**: v18 or higher (v20 recommended).
-- **Git**: To clone the repository.
-
-**macOS / Linux:**
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/StanislavHerman/House-of-Collective-Intelligence.git
-   cd House-of-Collective-Intelligence
-   ```
-2. Setup and Run:
-   ```bash
-   npm run setup
-   # Or manually: npm install && npm run build
-   ```
-3. Start:
-   ```bash
-   hause # or ./hause from the project folder
-   ```
-
-**Windows (PowerShell):**
-1. Clone the repository:
-   ```powershell
-   git clone https://github.com/StanislavHerman/House-of-Collective-Intelligence.git
-   cd House-of-Collective-Intelligence
-   ```
-2. Setup and Run (as Admin might be required for policy):
-   ```powershell
-   Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-   npm run setup
-   # Or manually: npm install; npm run build
-   ```
-3. Start:
-    ```cmd
-   hause
-   rem or .\hause.cmd from the project folder
-    ```
-
-#### 🔄 Updating
-The `/update` command works **only if you cloned the repository using Git**.
-If you downloaded the code as a ZIP archive:
-1. Download the new version manually.
-2. Run `npm run build` (or the install script) again.
+  - Prerequisites: Node.js v18+ (recommended v20 LTS), npm.
+  - With Git: `git clone https://github.com/StanislavHerman/House-of-Collective-Intelligence.git && cd House-of-Collective-Intelligence && ./install.sh && hause`
+  - Update: re-run the Quick Start command (or `git pull` + `./install.sh`).
+</details>
 
 #### 📋 Commands Menu (`/`)
 - **/login**: Setup API keys for different providers.
@@ -116,7 +88,17 @@ curl -fsSL https://raw.githubusercontent.com/StanislavHerman/House-of-Collective
 
 **Windows (PowerShell):**
 ```powershell
-irm https://raw.githubusercontent.com/StanislavHerman/House-of-Collective-Intelligence/main/get.ps1 | iex; & "$env:USERPROFILE\\.local\\bin\\hause.cmd"
+irm https://raw.githubusercontent.com/StanislavHerman/House-of-Collective-Intelligence/main/get.ps1 | iex; & "$env:USERPROFILE\.local\bin\hause.cmd"
+```
+
+**Что делает установщик:**
+- По возможности сам ставит зависимости (Git + Node.js v18+, рекомендовано v20 LTS).
+- Скачивает проект (Git clone, либо ZIP если Git недоступен).
+- Ставит зависимости, собирает и добавляет `hause` в PATH.
+
+**В следующий раз просто запускай:**
+```bash
+hause
 ```
 
 #### ✨ Возможности
@@ -138,51 +120,13 @@ irm https://raw.githubusercontent.com/StanislavHerman/House-of-Collective-Intell
 
 *Вы можете управлять этими разрешениями в любой момент через команду `/settings`.*
 
-#### 🚀 Установка (вручную)
+<details>
+  <summary><b>Ручная / расширенная установка</b></summary>
 
-**Требования:**
-- **Node.js**: v18 или выше (рекомендуется v20).
-- **Git**: Для клонирования репозитория.
-
-**macOS / Linux:**
-1. Клонируйте репозиторий:
-   ```bash
-   git clone https://github.com/StanislavHerman/House-of-Collective-Intelligence.git
-   cd House-of-Collective-Intelligence
-   ```
-2. Установка и запуск:
-   ```bash
-   npm run setup
-   # Или вручную: npm install && npm run build
-   ```
-3. Запуск:
-   ```bash
-   hause # или ./hause из папки проекта
-   ```
-
-**Windows (PowerShell):**
-1. Клонируйте репозиторий:
-   ```powershell
-   git clone https://github.com/StanislavHerman/House-of-Collective-Intelligence.git
-   cd House-of-Collective-Intelligence
-   ```
-2. Установка и запуск (может потребоваться запуск от имени администратора):
-   ```powershell
-   Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-   npm run setup
-   # Или вручную: npm install; npm run build
-   ```
-3. Запуск:
-   ```cmd
-   hause
-   rem или .\hause.cmd из папки проекта
-   ```
-
-#### 🔄 Обновление
-Команда `/update` работает **только если вы клонировали репозиторий через Git**.
-Если вы скачали код архивом (ZIP):
-1. Скачайте новую версию вручную.
-2. Запустите `npm run build` (или скрипт установки) заново.
+  - Требования: Node.js v18+ (рекомендовано v20 LTS), npm.
+  - Через Git: `git clone https://github.com/StanislavHerman/House-of-Collective-Intelligence.git && cd House-of-Collective-Intelligence && ./install.sh && hause`
+  - Обновление: заново запусти команду “Быстрый старт” (или `git pull` + `./install.sh`).
+</details>
 
 #### 📋 Меню команд (`/`)
 - **/login**: Настройка API ключей.
