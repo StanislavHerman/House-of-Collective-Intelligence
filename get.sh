@@ -34,8 +34,9 @@ try_install_git() {
       command -v git >/dev/null 2>&1 && return 0
     fi
 
-    echo "On macOS you need Xcode Command Line Tools (includes git)." >&2
-    echo "Run: xcode-select --install" >&2
+    echo "On macOS you may need Xcode Command Line Tools (includes git)." >&2
+    echo "Triggering: xcode-select --install" >&2
+    xcode-select --install >/dev/null 2>&1 || true
     return 1
   fi
 
