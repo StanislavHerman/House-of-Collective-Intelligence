@@ -1,11 +1,9 @@
-import type { Config } from 'jest';
-
-const config: Config = {
-  // preset: 'ts-jest/presets/default-esm', // Removed to avoid conflict with manual transform
+/** @type {import('jest').Config} */
+const config = {
   testEnvironment: 'node',
   extensionsToTreatAsEsm: ['.ts'],
   moduleNameMapper: {
-    '^(\\.{1,2}/.*)\\.js$': '$1', // Handle .js imports in TS files
+    '^(\\.{1,2}/.*)\\.js$': '$1',
   },
   transform: {
     '^.+\\.tsx?$': [
@@ -27,3 +25,4 @@ const config: Config = {
 };
 
 export default config;
+
